@@ -1,16 +1,16 @@
 import './xrpackage/EventTarget.js'; // iOS
 import * as THREE from './xrpackage/three.module.js';
-import {getExports} from './xrpackage/Graphics.js';
-const {getContext, CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext} = getExports();
+import { getExports } from './xrpackage/Graphics.js';
+const { getContext, CanvasRenderingContext2D, WebGLRenderingContext, WebGL2RenderingContext } = getExports();
 import * as XR from './xrpackage/XR.js';
 import symbols from './xrpackage/symbols.js';
 import wbn from './xrpackage/wbn.js';
-import {GLTFLoader} from './xrpackage/GLTFLoader.js';
-import {VOXLoader} from './xrpackage/VOXLoader.js';
-import {OrbitControls} from './xrpackage/OrbitControls.js';
+import { GLTFLoader } from './xrpackage/GLTFLoader.js';
+import { VOXLoader } from './xrpackage/VOXLoader.js';
+import { OrbitControls } from './xrpackage/OrbitControls.js';
 import Avatar from './xrpackage/avatars/avatars.js';
 import utils from './xrpackage/utils.js';
-const {hasWebGL2, requestSw} = utils;
+const { hasWebGL2, requestSw } = utils;
 
 export const apiHost = `https://ipfs.exokit.org/ipfs`;
 const primaryUrl = `https://xrpackage.org`;
@@ -43,46 +43,53 @@ const _cloneBundle = (bundle, options = {}) => {
   const startUrl = urlSpec.pathname.replace(/^\//, '');
   const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
   for (const u of bundle.urls) {
-    const {pathname} = new URL(u);
+    const { pathname } = new URL(u);
     if (!except.includes(pathname)) {
       const res = bundle.getResponse(u);
       const type = res.headers['content-type'];
       const data = res.body;
-      builder.addExchange(primaryUrl + pathname, 200, {
-        'Content-Type': type,
-      }, data);
+      builder.addExchange(
+        primaryUrl + pathname,
+        200,
+        {
+          'Content-Type': type,
+        },
+        data
+      );
     }
   }
   return builder;
 };
 const _hashData = (() => {
   let nodePromise = null;
-  return async d => {
+  return async (d) => {
     if (!nodePromise) {
-      nodePromise = import('https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js')
-        .then(() =>
-          Ipfs.create({
-            repo: 'inmem',
-            offline: true,
-            start: false,
-            silent: true,
-            // init: false,
-          })
-        );
+      nodePromise = import('https://cdn.jsdelivr.net/npm/ipfs/dist/index.min.js').then(() =>
+        Ipfs.create({
+          repo: 'inmem',
+          offline: true,
+          start: false,
+          silent: true,
+          // init: false,
+        })
+      );
     }
     const node = await nodePromise;
-    const {value: {path}} = await node.add(d).next();
+    const {
+      value: { path },
+    } = await node.add(d).next();
     return path;
   };
 })();
-const _setMicrophoneMediaStream = _oldSetMicrophoneMediaStream => function setMicrophoneMediaStream(mediaStream) {
-  return _oldSetMicrophoneMediaStream.call(this, mediaStream, {
-    microphoneWorkletUrl,
-  });
-};
+const _setMicrophoneMediaStream = (_oldSetMicrophoneMediaStream) =>
+  function setMicrophoneMediaStream(mediaStream) {
+    return _oldSetMicrophoneMediaStream.call(this, mediaStream, {
+      microphoneWorkletUrl,
+    });
+  };
 
 const HANDS = ['left', 'right'];
-const _oppositeHand = handedness => {
+const _oppositeHand = (handedness) => {
   if (handedness === 'left') {
     return 'right';
   } else if (handedness === 'right') {
@@ -100,12 +107,12 @@ const _getSlotInput = (rig, slot) => {
   } else if (slot === 'left' || slot === 'right') {
     return rig.inputs[slot + 'Gamepad'];
   } else if (slot === 'back') {
-    const {hmd} = rig.inputs;
+    const { hmd } = rig.inputs;
     return {
-      position: hmd.position.clone()
-        .add(localVector.set(0, 0, 0.2).applyQuaternion(hmd.quaternion)),
-      quaternion: hmd.quaternion.clone()
-        .multiply(localQuaternion.setFromAxisAngle(localVector.set(0, 1, 0), -Math.PI/2))
+      position: hmd.position.clone().add(localVector.set(0, 0, 0.2).applyQuaternion(hmd.quaternion)),
+      quaternion: hmd.quaternion
+        .clone()
+        .multiply(localQuaternion.setFromAxisAngle(localVector.set(0, 1, 0), -Math.PI / 2))
         .multiply(localQuaternion.setFromAxisAngle(localVector.set(0, 0, 1), Math.PI)),
       scale: hmd.scale,
     };
@@ -114,7 +121,7 @@ const _getSlotInput = (rig, slot) => {
   }
 };
 
-const _removeUrlTail = u => u.replace(/(?:\?|\#).*$/, '');
+const _removeUrlTail = (u) => u.replace(/(?:\?|\#).*$/, '');
 
 const _initSw = async () => {
   await navigator.serviceWorker.register('/sw.js', {
@@ -141,7 +148,7 @@ const _initSw = async () => {
 const swLoadPromise = _initSw().then(() => {});
 
 const _makeXrState = () => {
-  const _makeSab = size => {
+  const _makeSab = (size) => {
     const sab = new ArrayBuffer(size);
     let index = 0;
     return (c, n) => {
@@ -150,7 +157,7 @@ const _makeXrState = () => {
       return result;
     };
   };
-  const _makeTypedArray = _makeSab(32*1024);
+  const _makeTypedArray = _makeSab(32 * 1024);
 
   const result = {};
   result.isPresenting = _makeTypedArray(Uint32Array, 1);
@@ -181,13 +188,18 @@ const _makeXrState = () => {
   result.rightViewMatrix.set(result.leftViewMatrix);
   // new THREE.PerspectiveCamera(110, 2, 0.1, 2000).projectionMatrix.toArray()
   result.leftProjectionMatrix = _makeTypedArray(Float32Array, 16);
-  result.leftProjectionMatrix.set(Float32Array.from([0.3501037691048549, 0, 0, 0, 0, 0.7002075382097098, 0, 0, 0, 0, -1.00010000500025, -1, 0, 0, -0.200010000500025, 0]));
+  result.leftProjectionMatrix.set(
+    Float32Array.from([
+      0.3501037691048549, 0, 0, 0, 0, 0.7002075382097098, 0, 0, 0, 0, -1.00010000500025, -1, 0, 0, -0.200010000500025,
+      0,
+    ])
+  );
   result.rightProjectionMatrix = _makeTypedArray(Float32Array, 16);
   result.rightProjectionMatrix.set(result.leftProjectionMatrix);
   result.leftOffset = _makeTypedArray(Float32Array, 3);
-  result.leftOffset.set(Float32Array.from([-0.625/2, 0, 0]));
+  result.leftOffset.set(Float32Array.from([-0.625 / 2, 0, 0]));
   result.rightOffset = _makeTypedArray(Float32Array, 3);
-  result.leftOffset.set(Float32Array.from([0.625/2, 0, 0]));
+  result.leftOffset.set(Float32Array.from([0.625 / 2, 0, 0]));
   result.leftFov = _makeTypedArray(Float32Array, 4);
   result.leftFov.set(Float32Array.from([45, 45, 45, 45]));
   result.rightFov = _makeTypedArray(Float32Array, 4);
@@ -199,12 +211,14 @@ const _makeXrState = () => {
       result[3] = 1;
       return result;
     })(),
-    direction: (() => { // derived
+    direction: (() => {
+      // derived
       const result = _makeTypedArray(Float32Array, 4);
       result[2] = -1;
       return result;
     })(),
-    transformMatrix: (() => { // derived
+    transformMatrix: (() => {
+      // derived
       const result = _makeTypedArray(Float32Array, 16);
       result.set(Float32Array.from([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]));
       return result;
@@ -224,7 +238,7 @@ const _makeXrState = () => {
       return result;
     })();
     pose.axes = _makeTypedArray(Float32Array, 10);
-    pose.connected  =_makeTypedArray(Uint32Array, 1);
+    pose.connected = _makeTypedArray(Uint32Array, 1);
     return pose;
   };
   result.gamepads = (() => {
@@ -256,14 +270,14 @@ const _makeXrState = () => {
   return result;
 };
 
-const _loadPackageInSw = async p => {
+const _loadPackageInSw = async (p) => {
   await XRPackageEngine.waitForLoad();
   await requestSw({
     method: 'hijack',
     id: p.id,
     startUrl: _removeUrlTail(p.main),
     script: p.details ? p.details.script : null,
-    files: p.files.map(f => ({
+    files: p.files.map((f) => ({
       pathname: new URL(f.url).pathname,
       headers: f.response.headers,
       body: f.response.body,
@@ -272,10 +286,10 @@ const _loadPackageInSw = async p => {
 };
 
 const xrTypeLoaders = {
-  'webxr-site@0.0.1': async function(p) {
+  'webxr-site@0.0.1': async function (p) {
     // nothing
   },
-  'gltf@0.0.1': async function(p) {
+  'gltf@0.0.1': async function (p) {
     await _loadPackageInSw(p);
 
     const d = p.getMainData();
@@ -283,7 +297,7 @@ const xrTypeLoaders = {
       type: 'application/octet-stream',
     });
     const u = URL.createObjectURL(b);
-    const {scene} = await new Promise((accept, reject) => {
+    const { scene } = await new Promise((accept, reject) => {
       new GLTFLoader().load(u, accept, function onProgress() {}, reject);
     });
     URL.revokeObjectURL(u);
@@ -293,7 +307,7 @@ const xrTypeLoaders = {
 
     if (p.details.script) {
       const scriptPath = '/' + p.details.script;
-      const scriptFile = p.files.find(file => new URL(file.url).pathname === scriptPath);
+      const scriptFile = p.files.find((file) => new URL(file.url).pathname === scriptPath);
       const scriptBlob = new Blob([scriptFile.response.body], {
         type: 'text/javascript',
       });
@@ -305,19 +319,17 @@ const xrTypeLoaders = {
         method: 'init',
         scriptUrl,
       });
-      worker.addEventListener('message', e => {
+      worker.addEventListener('message', (e) => {
         const j = e.data;
-        const {method} = j;
+        const { method } = j;
         switch (method) {
           case 'update': {
-            const {matrix} = j;
-            scene.matrix
-              .fromArray(matrix)
-              .decompose(scene.position, scene.quaternion, scene.scale);
+            const { matrix } = j;
+            scene.matrix.fromArray(matrix).decompose(scene.position, scene.quaternion, scene.scale);
             break;
           }
           case 'message': {
-            const {data} = j;
+            const { data } = j;
             console.log('got message bus payload', data);
             break;
           }
@@ -330,7 +342,7 @@ const xrTypeLoaders = {
       p.context.worker = worker;
     }
   },
-  'vrm@0.0.1': async function(p) {
+  'vrm@0.0.1': async function (p) {
     await _loadPackageInSw(p);
 
     const d = p.getMainData();
@@ -345,12 +357,12 @@ const xrTypeLoaders = {
 
     p.context.object = o.scene;
     p.context.model = o;
-    o.scene.traverse(o => {
+    o.scene.traverse((o) => {
       o.frustumCulled = false;
     });
     p.matrixWorldNeedsUpdate = true;
   },
-  'vox@0.0.1': async function(p) {
+  'vox@0.0.1': async function (p) {
     await _loadPackageInSw(p);
 
     const d = p.getMainData();
@@ -366,7 +378,7 @@ const xrTypeLoaders = {
     p.context.object = o;
     p.matrixWorldNeedsUpdate = true;
   },
-  'xrpackage-scene@0.0.1': async function(p) {
+  'xrpackage-scene@0.0.1': async function (p) {
     await _loadPackageInSw(p);
 
     const d = p.getMainData();
@@ -376,7 +388,7 @@ const xrTypeLoaders = {
   },
 };
 const xrTypeAdders = {
-  'webxr-site@0.0.1': async function(p) {
+  'webxr-site@0.0.1': async function (p) {
     await _loadPackageInSw(p);
 
     const iframe = document.createElement('iframe');
@@ -393,7 +405,7 @@ const xrTypeAdders = {
         accept();
         _cleanup();
       };
-      const _error = err => {
+      const _error = (err) => {
         reject(err);
         _cleanup();
       };
@@ -436,19 +448,19 @@ const xrTypeAdders = {
 
     await p.context.requestPresentPromise;
   },
-  'gltf@0.0.1': async function(p) {
+  'gltf@0.0.1': async function (p) {
     this.container.add(p.context.object);
   },
-  'vrm@0.0.1': async function(p) {
+  'vrm@0.0.1': async function (p) {
     this.container.add(p.context.object);
   },
-  'vox@0.0.1': async function(p) {
+  'vox@0.0.1': async function (p) {
     this.container.add(p.context.object);
   },
 };
 const xrTypeRemovers = {
-  'webxr-site@0.0.1': function(p) {
-    this.rafs = this.rafs.filter(raf => raf[symbols.packageSymbol] !== p);
+  'webxr-site@0.0.1': function (p) {
+    this.rafs = this.rafs.filter((raf) => raf[symbols.packageSymbol] !== p);
 
     const emitKeyboardEvent = p.context.emitKeyboardEvent;
 
@@ -459,13 +471,13 @@ const xrTypeRemovers = {
     p.context.iframe.parentNode.removeChild(p.context.iframe);
     p.context.iframe = null;
   },
-  'gltf@0.0.1': function(p) {
+  'gltf@0.0.1': function (p) {
     p.context.object.parent.remove(p.context.object);
   },
-  'vrm@0.0.1': function(p) {
+  'vrm@0.0.1': function (p) {
     p.context.object.parent.remove(p.context.object);
   },
-  'vox@0.0.1': function(p) {
+  'vox@0.0.1': function (p) {
     p.context.object.parent.remove(p.context.object);
   },
 };
@@ -479,12 +491,24 @@ const _setFramebufferMsRenderbuffer = (gl, xrfb, width, height, devicePixelRatio
 
     const colorRenderbuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, colorRenderbuffer);
-    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 4, gl.RGBA8, width * devicePixelRatio, height * devicePixelRatio);
+    gl.renderbufferStorageMultisample(
+      gl.RENDERBUFFER,
+      4,
+      gl.RGBA8,
+      width * devicePixelRatio,
+      height * devicePixelRatio
+    );
     gl.framebufferRenderbuffer(gl.DRAW_FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, colorRenderbuffer);
 
     const depthRenderbuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, depthRenderbuffer);
-    gl.renderbufferStorageMultisample(gl.RENDERBUFFER, 4, gl.DEPTH32F_STENCIL8, width * devicePixelRatio, height * devicePixelRatio);
+    gl.renderbufferStorageMultisample(
+      gl.RENDERBUFFER,
+      4,
+      gl.DEPTH32F_STENCIL8,
+      width * devicePixelRatio,
+      height * devicePixelRatio
+    );
     gl.framebufferRenderbuffer(gl.DRAW_FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, depthRenderbuffer);
 
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, oldDrawFbo);
@@ -502,7 +526,17 @@ const _setFramebufferMsRenderbuffer = (gl, xrfb, width, height, devicePixelRatio
 
     const colorTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, colorTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width * devicePixelRatio, height * devicePixelRatio, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      width * devicePixelRatio,
+      height * devicePixelRatio,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      null
+    );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -511,7 +545,17 @@ const _setFramebufferMsRenderbuffer = (gl, xrfb, width, height, devicePixelRatio
 
     const depthTex = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, depthTex);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_STENCIL, width * devicePixelRatio, height * devicePixelRatio, 0, gl.DEPTH_STENCIL, webglDepthTexture.UNSIGNED_INT_24_8_WEBGL, null);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.DEPTH_STENCIL,
+      width * devicePixelRatio,
+      height * devicePixelRatio,
+      0,
+      gl.DEPTH_STENCIL,
+      webglDepthTexture.UNSIGNED_INT_24_8_WEBGL,
+      null
+    );
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.TEXTURE_2D, depthTex, 0);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, oldFbo);
@@ -522,7 +566,7 @@ const _setFramebufferMsRenderbuffer = (gl, xrfb, width, height, devicePixelRatio
   }
 };
 const userHeight = 1.7;
-const _getHeightFactor = rigHeight => rigHeight / userHeight;
+const _getHeightFactor = (rigHeight) => rigHeight / userHeight;
 class XRNode extends EventTarget {
   constructor() {
     super();
@@ -536,12 +580,14 @@ class XRNode extends EventTarget {
     this.children.push(p);
     this.matrixWorldNeedsUpdate = true;
 
-    this.dispatchEvent(new MessageEvent('packageadd', {
-      data: {
-        package: p,
-        reason,
-      },
-    }));
+    this.dispatchEvent(
+      new MessageEvent('packageadd', {
+        data: {
+          package: p,
+          reason,
+        },
+      })
+    );
 
     await p.ensureRunStop();
   }
@@ -551,15 +597,17 @@ class XRNode extends EventTarget {
       p.parent = null;
       this.children.splice(index, 1);
 
-      this.dispatchEvent(new MessageEvent('packageremove', {
-        data: {
-          package: p,
-          reason,
-        },
-      }));
+      this.dispatchEvent(
+        new MessageEvent('packageremove', {
+          data: {
+            package: p,
+            reason,
+          },
+        })
+      );
 
       setTimeout(() => {
-        p.recurse(p => {
+        p.recurse((p) => {
           p.ensureRunStop();
         });
       });
@@ -585,7 +633,8 @@ export class XRPackageEngine extends XRNode {
     options = options || {};
     options.width = typeof options.width === 'number' ? options.width : window.innerWidth;
     options.height = typeof options.height === 'number' ? options.height : window.innerHeight;
-    options.devicePixelRatio = typeof options.devicePixelRatio === 'number' ? options.devicePixelRatio : window.devicePixelRatio;
+    options.devicePixelRatio =
+      typeof options.devicePixelRatio === 'number' ? options.devicePixelRatio : window.devicePixelRatio;
     options.autoStart = typeof options.autoStart === 'boolean' ? options.autoStart : true;
     options.autoListen = typeof options.autoListen === 'boolean' ? options.autoListen : true;
     this.options = options;
@@ -608,16 +657,16 @@ export class XRPackageEngine extends XRNode {
       const maxTextureSize = proxyContext.getParameter(proxyContext.MAX_TEXTURE_SIZE);
       const fullWidth = options.width * options.devicePixelRatio;
       if (fullWidth > maxTextureSize) {
-        options.devicePixelRatio *= maxTextureSize/fullWidth;
+        options.devicePixelRatio *= maxTextureSize / fullWidth;
       }
       const fullHeight = options.height * options.devicePixelRatio;
       if (fullHeight > maxTextureSize) {
-        options.devicePixelRatio *= maxTextureSize/fullHeight;
+        options.devicePixelRatio *= maxTextureSize / fullHeight;
       }
     }
 
     this.xrState = _makeXrState();
-    this.xrState.renderWidth[0] = options.width / 2 * options.devicePixelRatio;
+    this.xrState.renderWidth[0] = (options.width / 2) * options.devicePixelRatio;
     this.xrState.renderHeight[0] = options.height * options.devicePixelRatio;
     this.matrix = new THREE.Matrix4();
     this.matrixWorld = this.matrix;
@@ -656,7 +705,7 @@ export class XRPackageEngine extends XRNode {
 
     const context = this.getContext(hasWebGL2 ? 'webgl2' : 'webgl');
     this.context = context;
-    
+
     const renderer = new THREE.WebGLRenderer({
       canvas,
       context,
@@ -678,7 +727,7 @@ export class XRPackageEngine extends XRNode {
     camera.position.set(0, 1, 2);
     camera.rotation.order = 'YXZ';
     this.camera = camera;
-    
+
     this.scale = 1;
 
     const container = new THREE.Object3D();
@@ -691,16 +740,16 @@ export class XRPackageEngine extends XRNode {
     orbitControls.update();
     this.orbitControls = orbitControls;
 
-    const ambientLight = new THREE.AmbientLight(0xFFFFFF);
+    const ambientLight = new THREE.AmbientLight(0xffffff);
     container.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 3);
-    directionalLight.position.set(10, 10, 10)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3);
+    directionalLight.position.set(10, 10, 10);
     container.add(directionalLight);
-    const directionalLight2 = new THREE.DirectionalLight(0xFFFFFF, 3);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 3);
     container.add(directionalLight2);
 
     this.fakeSession = new XR.XRSession(this.xrState, this.matrix);
-    this.fakeSession.onrequestanimationframe = fn => this.packageRequestAnimationFrame(fn, globalThis, null, 0);
+    this.fakeSession.onrequestanimationframe = (fn) => this.packageRequestAnimationFrame(fn, globalThis, null, 0);
     this.fakeSession.oncancelanimationframe = this.packageCancelAnimationFrame.bind(this);
 
     renderer.xr.setSession(this.fakeSession);
@@ -742,53 +791,53 @@ export class XRPackageEngine extends XRNode {
       function compileShader(gl, shaderSource, shaderType) {
         // Create the shader object
         var shader = gl.createShader(shaderType);
-       
+
         // Set the shader source code.
         gl.shaderSource(shader, shaderSource);
-       
+
         // Compile the shader
         gl.compileShader(shader);
-       
+
         // Check if it compiled
         var success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
           // Something went wrong during compilation; get the error
-          throw "could not compile shader:" + gl.getShaderInfoLog(shader);
+          throw 'could not compile shader:' + gl.getShaderInfoLog(shader);
         }
-       
+
         return shader;
       }
       function createProgram(gl, vertexShader, fragmentShader) {
         // create a program.
         const program = gl.createProgram();
-       
+
         // attach the shaders.
         gl.attachShader(program, vertexShader);
         gl.attachShader(program, fragmentShader);
-       
+
         // link the program.
         gl.linkProgram(program);
-       
+
         // Check if it linked.
         const success = gl.getProgramParameter(program, gl.LINK_STATUS);
         if (!success) {
           // something went wrong with the link
-          throw ("program filed to link:" + gl.getProgramInfoLog (program));
+          throw 'program filed to link:' + gl.getProgramInfoLog(program);
         }
-       
+
         return program;
       }
-      const fullscreenProgram = createProgram(gl, compileShader(gl, vertexShader, gl.VERTEX_SHADER), compileShader(gl, fragmentShader, gl.FRAGMENT_SHADER));
+      const fullscreenProgram = createProgram(
+        gl,
+        compileShader(gl, vertexShader, gl.VERTEX_SHADER),
+        compileShader(gl, fragmentShader, gl.FRAGMENT_SHADER)
+      );
 
       const verts = Float32Array.from([
         // First triangle:
-         1.0,  1.0,
-        -1.0,  1.0,
-        -1.0, -1.0,
+        1.0, 1.0, -1.0, 1.0, -1.0, -1.0,
         // Second triangle:
-        -1.0, -1.0,
-         1.0, -1.0,
-         1.0,  1.0,
+        -1.0, -1.0, 1.0, -1.0, 1.0, 1.0,
       ]);
       const vbo = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
@@ -812,7 +861,7 @@ export class XRPackageEngine extends XRNode {
       gl.bindBuffer(gl.ARRAY_BUFFER, null);
       gl.useProgram(null);
 
-      this.renderFullscreenTexture = tex => {
+      this.renderFullscreenTexture = (tex) => {
         const oldProgram = gl.getParameter(gl.CURRENT_PROGRAM);
         const oldArrayBuffer = gl.getParameter(gl.ARRAY_BUFFER_BINDING);
         const oldActiveTexture = gl.getParameter(gl.ACTIVE_TEXTURE);
@@ -829,7 +878,7 @@ export class XRPackageEngine extends XRNode {
         gl.uniform1i(colorMap, 0);
 
         gl.viewport(0, 0, options.width * options.devicePixelRatio, options.height * options.devicePixelRatio);
-        gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT | gl.STENCIL_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
 
         gl.viewport(oldViewport[0], oldViewport[1], oldViewport[2], oldViewport[3]);
@@ -839,7 +888,7 @@ export class XRPackageEngine extends XRNode {
         gl.activeTexture(oldActiveTexture);
       };
     }
-    
+
     renderer.render(scene, camera); // pre-render the scene to compile
 
     options.autoStart && this.start();
@@ -855,7 +904,7 @@ export class XRPackageEngine extends XRNode {
     this.setSession(null);
   }
   listen() {
-    window.addEventListener('resize', e => {
+    window.addEventListener('resize', (e) => {
       if (!this.realSession) {
         this.resize(window.innerWidth, window.innerHeight);
       }
@@ -865,22 +914,22 @@ export class XRPackageEngine extends XRNode {
     this.renderer.xr.isPresenting = false;
 
     this.renderer.setSize(width, height);
-    this.xrState.renderWidth[0] = width / 2 * devicePixelRatio;
+    this.xrState.renderWidth[0] = (width / 2) * devicePixelRatio;
     this.xrState.renderHeight[0] = height * devicePixelRatio;
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    
+
     _setFramebufferMsRenderbuffer(this.proxyContext, this.fakeXrFramebuffer, width, height, devicePixelRatio);
 
     this.renderer.xr.isPresenting = true;
-    
+
     this.options.width = width;
     this.options.height = height;
     this.options.devicePixelRatio = devicePixelRatio;
   }
   setMatrix(m) {
     this.matrix.copy(m);
-    this.recurseChildren(p => {
+    this.recurseChildren((p) => {
       p.matrixWorldNeedsUpdate = true;
     });
   }
@@ -905,9 +954,10 @@ export class XRPackageEngine extends XRNode {
     this.xrState.renderWidth[0] = width * (this.realSession ? 1 : 0.5);
     this.xrState.renderHeight[0] = height;
     {
-      this.camera.matrix.fromArray(viewMatrix)
-      pak && this.camera.matrix.premultiply(pak.matrix)
-      this.camera.matrix.premultiply(this.matrix)
+      this.camera.matrix.fromArray(viewMatrix);
+      pak && this.camera.matrix.premultiply(pak.matrix);
+      this.camera.matrix
+        .premultiply(this.matrix)
         .decompose(this.camera.position, this.camera.quaternion, this.camera.scale);
       this.camera.projectionMatrix.fromArray(projectionMatrix);
       this.camera.updateMatrixWorld();
@@ -924,7 +974,7 @@ export class XRPackageEngine extends XRNode {
     const timestamp = performance.now();
     this.renderer.xr.preAnimationFrame(timestamp, this.fakeSession._frame);
 
-    this.renderer.setClearColor(new THREE.Color(0xFFFFFF), 0);
+    this.renderer.setClearColor(new THREE.Color(0xffffff), 0);
     this.renderer.clear(true, true, true);
     this.draw(timestamp, pak);
     this.renderer.setClearColor(new THREE.Color(0x0), 0);
@@ -943,12 +993,14 @@ export class XRPackageEngine extends XRNode {
     } else {
       this.xrState.leftViewMatrix.set(_leftViewMatrix);
       this.xrState.leftProjectionMatrix.set(_leftProjectionMatrix);
-      
+
       this.xrState.rightViewMatrix.set(_rightViewMatrix);
       this.xrState.rightProjectionMatrix.set(_rightProjectionMatrix);
     }
     this.setXrFramebuffer(_xrfb);
-    this.setClearFreeFramebuffer(this.realSession ? this.realSession.renderState.baseLayer.framebuffer : this.fakeXrFramebuffer);
+    this.setClearFreeFramebuffer(
+      this.realSession ? this.realSession.renderState.baseLayer.framebuffer : this.fakeXrFramebuffer
+    );
     if (wasDecapitated) {
       this.rig.decapitate();
     }
@@ -956,7 +1008,7 @@ export class XRPackageEngine extends XRNode {
   }
   setMicrophoneMediaStream(mediaStream) {
     if (this.microphoneMediaStream) {
-      const {microphoneMediaStream} = this;
+      const { microphoneMediaStream } = this;
       this.microphoneMediaStream = null;
       microphoneMediaStream.close();
     }
@@ -973,15 +1025,15 @@ export class XRPackageEngine extends XRNode {
 
     this.microphoneMediaStream = mediaStream;
     this.rig && this.rig.setMicrophoneMediaStream(mediaStream);
-    this.dispatchEvent(new MessageEvent('usermediachanged', {
-      data: mediaStream,
-    }));
+    this.dispatchEvent(
+      new MessageEvent('usermediachanged', {
+        data: mediaStream,
+      })
+    );
   }
-  getProxySession({
-    order = 0,
-  } = {}) {
+  getProxySession({ order = 0 } = {}) {
     const session = Object.create(this.fakeSession);
-    session.onrequestanimationframe = fn => this.packageRequestAnimationFrame(fn, globalThis, null, order);
+    session.onrequestanimationframe = (fn) => this.packageRequestAnimationFrame(fn, globalThis, null, order);
     session.addEventListener = this.fakeSession.addEventListener.bind(this.fakeSession);
     session.removeEventListener = this.fakeSession.removeEventListener.bind(this.fakeSession);
     return session;
@@ -1017,7 +1069,7 @@ export class XRPackageEngine extends XRNode {
       this.loadReferenceSpaceInterval = setInterval(_loadReferenceSpace, 1000);
 
       const baseLayer = new OldXR.XRWebGLLayer(realSession, this.proxyContext);
-      realSession.updateRenderState({baseLayer});
+      realSession.updateRenderState({ baseLayer });
 
       await new Promise((accept, reject) => {
         const _recurse = () => {
@@ -1063,7 +1115,7 @@ export class XRPackageEngine extends XRNode {
       });
       this.realSession = realSession;
     } else {
-      const animate = timestamp => {
+      const animate = (timestamp) => {
         const frameId = window.requestAnimationFrame(animate);
         this.cancelFrame = () => {
           window.cancelAnimationFrame(frameId);
@@ -1079,15 +1131,19 @@ export class XRPackageEngine extends XRNode {
   }
   setXrFramebuffer(xrfb) {
     this.fakeSession.xrFramebuffer = xrfb;
-    this.recurseChildren(p => {
+    this.recurseChildren((p) => {
       p.setXrFramebuffer(xrfb);
     });
   }
   setClearFreeFramebuffer(fb) {
-    this.recurseChildren(p => {
+    this.recurseChildren((p) => {
       if (
         // p !== skipPackage &&
-        p.context.iframe && p.context.iframe.contentWindow && p.context.iframe.contentWindow.xrpackage && p.context.iframe.contentWindow.xrpackage.session && p.context.iframe.contentWindow.xrpackage.session.renderState.baseLayer
+        p.context.iframe &&
+        p.context.iframe.contentWindow &&
+        p.context.iframe.contentWindow.xrpackage &&
+        p.context.iframe.contentWindow.xrpackage.session &&
+        p.context.iframe.contentWindow.xrpackage.session.renderState.baseLayer
       ) {
         // p.context.iframe.contentWindow.xrpackage.session.renderState.baseLayer.context._exokitClearEnabled(false);
         p.context.iframe.contentWindow.xrpackage.session.renderState.baseLayer.context._exokitSetXrFramebuffer(fb);
@@ -1098,19 +1154,17 @@ export class XRPackageEngine extends XRNode {
     this.renderer.clear(true, true, true);
 
     // update hmd
-    const {realSession, xrState} = this;
+    const { realSession, xrState } = this;
     if (realSession) {
       const pose = frame.getViewerPose(this.referenceSpace);
       if (pose) {
         const _scaleMatrixArray = (srcMatrixArray, dstMatrixArray) => {
-          localMatrix.fromArray(srcMatrixArray)
-            .decompose(localVector, localQuaternion, localVector2);
+          localMatrix.fromArray(srcMatrixArray).decompose(localVector, localQuaternion, localVector2);
           localVector.divideScalar(this.scale);
-          localMatrix.compose(localVector, localQuaternion, localVector2)
-            .toArray(dstMatrixArray);
+          localMatrix.compose(localVector, localQuaternion, localVector2).toArray(dstMatrixArray);
         };
         const _loadHmd = () => {
-          const {views} = pose;
+          const { views } = pose;
 
           _scaleMatrixArray(pose.transform.matrix, xrState.poseMatrix);
 
@@ -1130,11 +1184,10 @@ export class XRPackageEngine extends XRNode {
     // update pose
     const _computePose = () => {
       if (this.rigMatrixEnabled) {
-        localMatrix.copy(this.rigMatrix)
-          .premultiply(localMatrix2.getInverse(this.matrix))
-          .toArray(xrState.poseMatrix);
+        localMatrix.copy(this.rigMatrix).premultiply(localMatrix2.getInverse(this.matrix)).toArray(xrState.poseMatrix);
       } else {
-        localMatrix.fromArray(xrState.leftViewMatrix)
+        localMatrix
+          .fromArray(xrState.leftViewMatrix)
           .getInverse(localMatrix)
           .premultiply(localMatrix2.getInverse(this.matrix))
           .toArray(xrState.poseMatrix);
@@ -1147,14 +1200,13 @@ export class XRPackageEngine extends XRNode {
       const gamepads = navigator.getGamepads();
 
       const _scaleMatrixPQ = (srcMatrixArray, p, q) => {
-        localMatrix.fromArray(srcMatrixArray)
-          .decompose(localVector, localQuaternion, localVector2);
+        localMatrix.fromArray(srcMatrixArray).decompose(localVector, localQuaternion, localVector2);
         localVector.divideScalar(this.scale);
-        /*p && */localVector.toArray(p);
-        /*q && */localQuaternion.toArray(q);
+        /*p && */ localVector.toArray(p);
+        /*q && */ localQuaternion.toArray(q);
         // s && localVector2.toArray(s);
       };
-      const _loadInputSource = i => {
+      const _loadInputSource = (i) => {
         const inputSource = inputSources[i];
         if (inputSource) {
           let gamepad, pose, hand;
@@ -1164,7 +1216,7 @@ export class XRPackageEngine extends XRNode {
           ) {
             const xrGamepad = xrState.gamepads[inputSource.handedness === 'right' ? 1 : 0];
             _scaleMatrixPQ(pose.transform.matrix, xrGamepad.position, xrGamepad.orientation);
-            
+
             for (let j = 0; j < gamepad.buttons.length; j++) {
               const button = gamepad.buttons[j];
               const xrButton = xrGamepad.buttons[j];
@@ -1172,15 +1224,13 @@ export class XRPackageEngine extends XRNode {
               xrButton.touched[0] = button.touched;
               xrButton.value[0] = button.value;
             }
-            
+
             for (let j = 0; j < gamepad.axes.length; j++) {
               xrGamepad.axes[j] = gamepad.axes[j];
             }
-            
+
             xrGamepad.connected[0] = 1;
-          } else if (
-            (hand = inputSource.hand)
-          ) {
+          } else if ((hand = inputSource.hand)) {
             const xrHand = xrState.hands[inputSource.handedness === 'right' ? 1 : 0];
             for (let i = 0; i < inputSource.hand.length; i++) {
               const joint = inputSource.hand[i];
@@ -1209,15 +1259,18 @@ export class XRPackageEngine extends XRNode {
         _loadInputSource(i);
       }
     } else {
-      const {rig, rigPackage} = this;
+      const { rig, rigPackage } = this;
       if (rig || rigPackage) {
-        localMatrix.fromArray(this.xrState.poseMatrix)
-          .decompose(localVector, localQuaternion, localVector2);
-        const handOffsetScale = rig ? rig.height/1.5 : 1;
-        new THREE.Vector3().copy(localVector).add(localVector2.copy(leftHandOffset).multiplyScalar(handOffsetScale).applyQuaternion(localQuaternion))
+        localMatrix.fromArray(this.xrState.poseMatrix).decompose(localVector, localQuaternion, localVector2);
+        const handOffsetScale = rig ? rig.height / 1.5 : 1;
+        new THREE.Vector3()
+          .copy(localVector)
+          .add(localVector2.copy(leftHandOffset).multiplyScalar(handOffsetScale).applyQuaternion(localQuaternion))
           .toArray(xrState.gamepads[1].position);
         localQuaternion.toArray(xrState.gamepads[1].orientation);
-        new THREE.Vector3().copy(localVector).add(localVector2.copy(rightHandOffset).multiplyScalar(handOffsetScale).applyQuaternion(localQuaternion))
+        new THREE.Vector3()
+          .copy(localVector)
+          .add(localVector2.copy(rightHandOffset).multiplyScalar(handOffsetScale).applyQuaternion(localQuaternion))
           .toArray(xrState.gamepads[0].position);
         localQuaternion.toArray(xrState.gamepads[0].orientation);
 
@@ -1241,16 +1294,14 @@ export class XRPackageEngine extends XRNode {
       }
     }
 
-    const _computeGamepad = gamepad => {
+    const _computeGamepad = (gamepad) => {
       localVector
         .set(0, 0, -1)
         .applyQuaternion(localQuaternion.fromArray(gamepad.orientation))
         .toArray(gamepad.direction);
       localVector.fromArray(gamepad.position);
       localVector2.set(1, 1, 1);
-      localMatrix
-        .compose(localVector, localQuaternion, localVector2)
-        .toArray(gamepad.transformMatrix);
+      localMatrix.compose(localVector, localQuaternion, localVector2).toArray(gamepad.transformMatrix);
     };
     const _computeDerivedGamepadsData = () => {
       for (const gamepad of xrState.gamepads) {
@@ -1265,20 +1316,27 @@ export class XRPackageEngine extends XRNode {
     _computeDerivedGamepadsData();
 
     {
-      const {rig, rigPackage} = this;
+      const { rig, rigPackage } = this;
       if (rig || rigPackage) {
-        localMatrix.fromArray(this.xrState.poseMatrix)
-          .decompose(localVector, localQuaternion, localVector2);
+        localMatrix.fromArray(this.xrState.poseMatrix).decompose(localVector, localQuaternion, localVector2);
         if (rig) {
           rig.inputs.hmd.position.copy(localVector);
           rig.inputs.hmd.quaternion.copy(localQuaternion);
           localMatrix2.getInverse(this.matrix);
           localMatrix
-            .compose(localVector.fromArray(xrState.gamepads[1].position), localQuaternion.fromArray(xrState.gamepads[1].orientation), localVector2.set(1, 1, 1))
+            .compose(
+              localVector.fromArray(xrState.gamepads[1].position),
+              localQuaternion.fromArray(xrState.gamepads[1].orientation),
+              localVector2.set(1, 1, 1)
+            )
             .premultiply(localMatrix2)
             .decompose(rig.inputs.leftGamepad.position, rig.inputs.leftGamepad.quaternion, localVector2);
           localMatrix
-            .compose(localVector.fromArray(xrState.gamepads[0].position), localQuaternion.fromArray(xrState.gamepads[0].orientation), localVector2.set(1, 1, 1))
+            .compose(
+              localVector.fromArray(xrState.gamepads[0].position),
+              localQuaternion.fromArray(xrState.gamepads[0].orientation),
+              localVector2.set(1, 1, 1)
+            )
             .premultiply(localMatrix2)
             .decompose(rig.inputs.rightGamepad.position, rig.inputs.rightGamepad.quaternion, localVector2);
 
@@ -1287,20 +1345,26 @@ export class XRPackageEngine extends XRNode {
           rig.inputs.rightGamepad.pointer = xrState.gamepads[0].buttons[0].value;
           rig.inputs.rightGamepad.grip = xrState.gamepads[0].buttons[1].value;
 
-          HANDS.forEach(handedness => {
+          HANDS.forEach((handedness) => {
             const grabuse = this.grabuses[handedness];
             if (grabuse) {
-              const {startTime, endTime} = grabuse;
+              const { startTime, endTime } = grabuse;
               const input = rig.inputs[_oppositeHand(handedness) + 'Gamepad'];
               const now = Date.now();
               if (now < endTime) {
                 const f = Math.min(Math.max((now - startTime) / (endTime - startTime), 0), 1);
                 input.position.add(
-                  localVector.set(0, Math.sin(f * Math.PI * 2) * 0.2, (-1 + Math.cos(f * Math.PI * 2)) * 0.2)
+                  localVector
+                    .set(0, Math.sin(f * Math.PI * 2) * 0.2, (-1 + Math.cos(f * Math.PI * 2)) * 0.2)
                     .applyQuaternion(input.quaternion)
                 );
                 input.quaternion.multiply(
-                  localQuaternion.set(0, 0, 0, 1).slerp(localQuaternion2.setFromAxisAngle(localVector.set(1, 0, 0), -Math.PI*0.5), Math.sin(f * Math.PI))
+                  localQuaternion
+                    .set(0, 0, 0, 1)
+                    .slerp(
+                      localQuaternion2.setFromAxisAngle(localVector.set(1, 0, 0), -Math.PI * 0.5),
+                      Math.sin(f * Math.PI)
+                    )
                 );
               } else {
                 this.grabuses[handedness] = null;
@@ -1313,7 +1377,7 @@ export class XRPackageEngine extends XRNode {
               grab.setMatrix(localMatrix.compose(localVector, input.quaternion, input.scale));
             }
           });
-          SLOTS.forEach(slot => {
+          SLOTS.forEach((slot) => {
             const equip = this.equips[slot];
             if (equip) {
               const input = _getSlotInput(rig, slot);
@@ -1338,7 +1402,9 @@ export class XRPackageEngine extends XRNode {
       }
     }
 
-    this.setClearFreeFramebuffer(this.realSession ? this.realSession.renderState.baseLayer.framebuffer : this.fakeXrFramebuffer);
+    this.setClearFreeFramebuffer(
+      this.realSession ? this.realSession.renderState.baseLayer.framebuffer : this.fakeXrFramebuffer
+    );
 
     // draw packages
     this.draw(timestamp);
@@ -1352,14 +1418,21 @@ export class XRPackageEngine extends XRNode {
 
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.fakeXrFramebuffer);
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
-        
+
         // gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT|gl.STENCIL_BUFFER_BIT);
         gl.blitFramebuffer(
-          0, 0, this.options.width * this.options.devicePixelRatio, this.options.height * this.options.devicePixelRatio,
-          0, 0, this.options.width * this.options.devicePixelRatio, this.options.height * this.options.devicePixelRatio,
-          gl.COLOR_BUFFER_BIT, gl.LINEAR
+          0,
+          0,
+          this.options.width * this.options.devicePixelRatio,
+          this.options.height * this.options.devicePixelRatio,
+          0,
+          0,
+          this.options.width * this.options.devicePixelRatio,
+          this.options.height * this.options.devicePixelRatio,
+          gl.COLOR_BUFFER_BIT,
+          gl.LINEAR
         );
-        
+
         gl.bindFramebuffer(gl.READ_FRAMEBUFFER, oldReadFbo);
         gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, oldDrawFbo);
       } else {
@@ -1374,7 +1447,7 @@ export class XRPackageEngine extends XRNode {
   }
   updateMatrixWorld() {
     const force = this.matrixWorldNeedsUpdate;
-    this.recurseChildren(p => {
+    this.recurseChildren((p) => {
       p.updateMatrixWorld(force);
     });
     this.matrixWorldNeedsUpdate = false;
@@ -1385,8 +1458,7 @@ export class XRPackageEngine extends XRNode {
 
     // tick rafs
     if (!skipPackage) {
-      this.runningRafs = this.rafs
-        .sort((a, b) => a[symbols.orderSymbol] - b[symbols.orderSymbol]);
+      this.runningRafs = this.rafs.sort((a, b) => a[symbols.orderSymbol] - b[symbols.orderSymbol]);
       this.rafs = [];
       for (let i = 0; i < this.runningRafs.length; i++) {
         const raf = this.runningRafs[i];
@@ -1434,7 +1506,7 @@ export class XRPackageEngine extends XRNode {
     }
   }
   packageCancelAnimationFrame(id) {
-    const index = this.rafs.findIndex(fn => fn[symbols.rafCbsSymbol].id === id);
+    const index = this.rafs.findIndex((fn) => fn[symbols.rafCbsSymbol].id === id);
     if (index !== -1) {
       this.rafs.splice(index, 1);
     }
@@ -1446,7 +1518,7 @@ export class XRPackageEngine extends XRNode {
     if (options.audio) {
       if (!this.microphoneMediaStream) {
         await new Promise((accept, reject) => {
-          const _usermediachanged = e => {
+          const _usermediachanged = (e) => {
             if (this.microphoneMediaStream) {
               accept();
               this.removeEventListener('usermediachanged', _usermediachanged);
@@ -1488,42 +1560,44 @@ export class XRPackageEngine extends XRNode {
   }
   setEnv(key, value) {
     this.env[key] = value;
-    this.dispatchEvent(new MessageEvent('envchange', {
-      data: {
-        key,
-        value,
-      },
-    }));
+    this.dispatchEvent(
+      new MessageEvent('envchange', {
+        data: {
+          key,
+          value,
+        },
+      })
+    );
   }
   dispatchXrEvent(pak, type, data, onresponse) {
-    this.recurseChildren(p => {
+    this.recurseChildren((p) => {
       if (p !== pak) {
-        p.context.iframe && p.context.iframe.contentWindow &&
-          p.context.iframe.contentWindow.navigator.xr.dispatchEvent(new MessageEvent('event', {
-            data: {
-              package: pak,
-              type,
-              data,
-              respond(response) {
-                onresponse && onresponse(response);
+        p.context.iframe &&
+          p.context.iframe.contentWindow &&
+          p.context.iframe.contentWindow.navigator.xr.dispatchEvent(
+            new MessageEvent('event', {
+              data: {
+                package: pak,
+                type,
+                data,
+                respond(response) {
+                  onresponse && onresponse(response);
+                },
               },
-            },
-          }));
+            })
+          );
       }
     });
   }
   grabdown(handedness) {
     if (this.rig && !this.grabs[handedness]) {
       const input = this.rig.inputs[_oppositeHand(handedness) + 'Gamepad'];
-      const inputPosition = localVector
-        .copy(input.position)
-        .divideScalar(this.scale);
-      const ps = this.children
-        .sort((a, b) => {
-          a.matrix.decompose(localVector2, localQuaternion, localVector4);
-          b.matrix.decompose(localVector3, localQuaternion, localVector4);
-          return localVector2.distanceTo(inputPosition) - localVector3.distanceTo(inputPosition);
-        });
+      const inputPosition = localVector.copy(input.position).divideScalar(this.scale);
+      const ps = this.children.sort((a, b) => {
+        a.matrix.decompose(localVector2, localQuaternion, localVector4);
+        b.matrix.decompose(localVector3, localQuaternion, localVector4);
+        return localVector2.distanceTo(inputPosition) - localVector3.distanceTo(inputPosition);
+      });
       if (ps.length > 0) {
         const p = ps[0];
         p.matrix.decompose(localVector2, localQuaternion, localVector4);
@@ -1565,15 +1639,12 @@ export class XRPackageEngine extends XRNode {
         this.equips[slot] = null;
       } else {
         const input = _getSlotInput(this.rig, slot);
-        const inputPosition = localVector
-          .copy(input.position)
-          .divideScalar(this.scale);
-        const ps = this.children
-          .sort((a, b) => {
-            a.matrix.decompose(localVector2, localQuaternion, localVector4);
-            b.matrix.decompose(localVector3, localQuaternion, localVector4);
-            return localVector2.distanceTo(inputPosition) - localVector3.distanceTo(inputPosition);
-          });
+        const inputPosition = localVector.copy(input.position).divideScalar(this.scale);
+        const ps = this.children.sort((a, b) => {
+          a.matrix.decompose(localVector2, localQuaternion, localVector4);
+          b.matrix.decompose(localVector3, localQuaternion, localVector4);
+          return localVector2.distanceTo(inputPosition) - localVector3.distanceTo(inputPosition);
+        });
         if (ps.length > 0) {
           const p = ps[0];
           p.matrix.decompose(localVector2, localQuaternion, localVector4);
@@ -1597,9 +1668,9 @@ export class XRPackageEngine extends XRNode {
       this.rigPackage = null;
     }
 
-    const {model} = p.context;
+    const { model } = p.context;
     if (model) {
-      model.scene.traverse(o => {
+      model.scene.traverse((o) => {
         o.frustumCulled = false;
       });
       this.rig = new Avatar(model, {
@@ -1614,7 +1685,7 @@ export class XRPackageEngine extends XRNode {
       this.container.add(this.rig.model);
 
       const heightFactor = _getHeightFactor(this.rig.height);
-      this.setScale(1/heightFactor);
+      this.setScale(1 / heightFactor);
     } else {
       await this.add(p, 'avatar');
       this.rigPackage = p;
@@ -1648,13 +1719,13 @@ export class XRPackageEngine extends XRNode {
       this.reset();
 
       const j = p.context.json;
-      const {name, xrpackage_scene: xrPackageScene} = j;
-      const {children} = xrPackageScene;
+      const { name, xrpackage_scene: xrPackageScene } = j;
+      const { children } = xrPackageScene;
 
       this.name = name;
       for (let i = 0; i < children.length; i++) {
         const child = children[i];
-        const {id, hash, matrix} = child;
+        const { id, hash, matrix } = child;
         if (hash) {
           const p = await XRPackage.download(hash);
           p.id = id;
@@ -1662,7 +1733,7 @@ export class XRPackageEngine extends XRNode {
           this.add(p, 'importScene');
         } else {
           const idUrl = primaryUrl + '/' + id + '.wbn';
-          const file = p.files.find(f => f.url === idUrl);
+          const file = p.files.find((f) => f.url === idUrl);
           if (file) {
             const p = new XRPackage(file.response.body);
             p.id = id;
@@ -1686,7 +1757,7 @@ export class XRPackageEngine extends XRNode {
       xr_type: 'xrpackage-scene@0.0.1',
       start_url: 'manifest.json',
       xrpackage_scene: {
-        children: this.children.map(p => {
+        children: this.children.map((p) => {
           return {
             id: p.id,
             // hash: p.hash,
@@ -1695,21 +1766,31 @@ export class XRPackageEngine extends XRNode {
         }),
       },
     };
-    builder.addExchange(manifestJsonPath, 200, {
-      'Content-Type': 'application/json',
-    }, JSON.stringify(manifestJson, null, 2));
+    builder.addExchange(
+      manifestJsonPath,
+      200,
+      {
+        'Content-Type': 'application/json',
+      },
+      JSON.stringify(manifestJson, null, 2)
+    );
     for (let i = 0; i < this.children.length; i++) {
       const p = this.children[i];
-      builder.addExchange(primaryUrl + '/' + p.id + '.wbn', 200, {
-        'Content-Type': 'application/json',
-      }, p.data);
+      builder.addExchange(
+        primaryUrl + '/' + p.id + '.wbn',
+        200,
+        {
+          'Content-Type': 'application/json',
+        },
+        p.data
+      );
     }
     return builder.createBundle();
   }
   async uploadScene() {
     const manifestJsonPath = primaryUrl + '/manifest.json';
     const builder = new wbn.BundleBuilder(manifestJsonPath);
-    const hashes = await Promise.all(this.children.map(p => p.upload()));
+    const hashes = await Promise.all(this.children.map((p) => p.upload()));
     const manifestJson = {
       name: this.name,
       description: 'XRPackage scene exported with the browser frontend.',
@@ -1726,9 +1807,14 @@ export class XRPackageEngine extends XRNode {
       },
     };
     console.log('upload scene', manifestJson);
-    builder.addExchange(manifestJsonPath, 200, {
-      'Content-Type': 'application/json',
-    }, JSON.stringify(manifestJson, null, 2));
+    builder.addExchange(
+      manifestJsonPath,
+      200,
+      {
+        'Content-Type': 'application/json',
+      },
+      JSON.stringify(manifestJson, null, 2)
+    );
     const uint8Array = builder.createBundle();
 
     const res = await fetch(`${apiHost}/`, {
@@ -1737,7 +1823,7 @@ export class XRPackageEngine extends XRNode {
     });
     if (res.ok) {
       const j = await res.json();
-      const {hash} = j;
+      const { hash } = j;
       return hash;
     } else {
       throw new Error('upload failed: ' + res.status);
@@ -1759,7 +1845,7 @@ export class XRPackageEngine extends XRNode {
   }
 }
 
-let packageIds = Math.floor(Math.random() * 0xFFFFFF);
+let packageIds = Math.floor(Math.random() * 0xffffff);
 export class XRPackage extends XRNode {
   constructor(a) {
     super();
@@ -1809,22 +1895,22 @@ export class XRPackage extends XRNode {
     const j = this.getManifestJson();
     if (j) {
       if (j && typeof j.xr_type === 'string' && typeof j.start_url === 'string') {
-        let {
-          name,
-          xr_type: xrType,
-          start_url: startUrl,
-          xr_details: xrDetails,
-        } = j;
+        let { name, xr_type: xrType, start_url: startUrl, xr_details: xrDetails } = j;
         if (xrDetails === undefined || (typeof xrDetails === 'object' && !Array.isArray(xrDetails))) {
           xrDetails = xrDetails || {};
         } else {
           throw new Error('invalid xr_details in manifest.json');
         }
         let schema;
-        if (xrDetails.schema !== undefined && typeof xrDetails.schema === 'object' && !Array.isArray(xrDetails.schema) && Object.keys(xrDetails.schema).every(k => {
-          const spec = xrDetails.schema[k];
-          return spec && spec.type === 'string' && (spec.default === undefined || typeof spec.default === 'string');
-        })) {
+        if (
+          xrDetails.schema !== undefined &&
+          typeof xrDetails.schema === 'object' &&
+          !Array.isArray(xrDetails.schema) &&
+          Object.keys(xrDetails.schema).every((k) => {
+            const spec = xrDetails.schema[k];
+            return spec && spec.type === 'string' && (spec.default === undefined || typeof spec.default === 'string');
+          })
+        ) {
           schema = {};
           for (const k in xrDetails.schema) {
             schema[k] = xrDetails.schema[k].default || '';
@@ -1841,16 +1927,17 @@ export class XRPackage extends XRNode {
           this.schema = schema;
           this.details = xrDetails;
 
-          loader(this)
-            .then(o => {
-              this.loaded = true;
-              this.dispatchEvent(new MessageEvent('load', {
+          loader(this).then((o) => {
+            this.loaded = true;
+            this.dispatchEvent(
+              new MessageEvent('load', {
                 data: {
                   type: this.type,
                   object: o,
                 },
-              }));
-            });
+              })
+            );
+          });
         } else {
           throw new Error(`unknown xr_type: ${xrType}`);
         }
@@ -1867,42 +1954,58 @@ export class XRPackage extends XRNode {
   async waitForLoad() {
     if (!this.loaded) {
       await new Promise((accept, reject) => {
-        this.addEventListener('load', e => {
-          accept();
-        }, {once: true});
+        this.addEventListener(
+          'load',
+          (e) => {
+            accept();
+          },
+          { once: true }
+        );
       });
     }
   }
   async waitForRun() {
     if (!this.runningEngine) {
       await new Promise((accept, reject) => {
-        this.addEventListener('run', e => {
-          accept();
-        }, {once: true});
+        this.addEventListener(
+          'run',
+          (e) => {
+            accept();
+          },
+          { once: true }
+        );
       });
     }
   }
   async add(p, reason) {
     await super.add(p, reason);
 
-    this.context.iframe && this.context.iframe.contentWindow && this.context.iframe.contentWindow.xrpackage &&
-      this.context.iframe.contentWindow.xrpackage.dispatchEvent(new MessageEvent('packageadd', {
-        data: {
-          package: p,
-          reason,
-        },
-      }));
+    this.context.iframe &&
+      this.context.iframe.contentWindow &&
+      this.context.iframe.contentWindow.xrpackage &&
+      this.context.iframe.contentWindow.xrpackage.dispatchEvent(
+        new MessageEvent('packageadd', {
+          data: {
+            package: p,
+            reason,
+          },
+        })
+      );
   }
   remove(p, reason) {
     super.remove(p, reason);
 
-    this.context.iframe && this.context.iframe.contentWindow && this.context.iframe.contentWindow.xrpackage &&
-      this.context.iframe.contentWindow.xrpackage.dispatchEvent(new MessageEvent('packageremove', {
-        data: {
-          package: p,
-          reason,
-        },
-      }));
+    this.context.iframe &&
+      this.context.iframe.contentWindow &&
+      this.context.iframe.contentWindow.xrpackage &&
+      this.context.iframe.contentWindow.xrpackage.dispatchEvent(
+        new MessageEvent('packageremove', {
+          data: {
+            package: p,
+            reason,
+          },
+        })
+      );
   }
   get visible() {
     return this._visible;
@@ -1937,7 +2040,7 @@ export class XRPackage extends XRNode {
     this.context.iframe && this.context.iframe.contentWindow.xrpackage.setSchema(key, value);
   }
   getManifestJson() {
-    const manifestJsonFile = this.files.find(file => new URL(file.url).pathname === '/manifest.json');
+    const manifestJsonFile = this.files.find((file) => new URL(file.url).pathname === '/manifest.json');
     if (manifestJsonFile) {
       const s = manifestJsonFile.response.body.toString('utf8');
       const j = JSON.parse(s);
@@ -1948,7 +2051,7 @@ export class XRPackage extends XRNode {
   }
   getMainData() {
     const mainPath = '/' + this.main;
-    const mainFile = this.files.find(file => new URL(file.url).pathname === mainPath);
+    const mainFile = this.files.find((file) => new URL(file.url).pathname === mainPath);
     return mainFile.response.body;
   }
   addFile(pathname, data = '', type = 'application/octet-stream') {
@@ -1956,9 +2059,14 @@ export class XRPackage extends XRNode {
     const builder = _cloneBundle(bundle, {
       except: ['/' + pathname],
     });
-    builder.addExchange(primaryUrl + '/' + pathname, 200, {
-      'Content-Type': type,
-    }, data);
+    builder.addExchange(
+      primaryUrl + '/' + pathname,
+      200,
+      {
+        'Content-Type': type,
+      },
+      data
+    );
     this.data = builder.createBundle();
     bundle = new wbn.Bundle(this.data);
 
@@ -2000,23 +2108,25 @@ export class XRPackage extends XRNode {
         reader.onerror = reject;
         reader.readAsArrayBuffer(file);
       });
-      return this.compileRaw(
-        [
-          {
-            url: '/' + file.name,
-            type: mimeType,
-            data: fileData,
-          },
-          {
-            url: '/manifest.json',
-            type: 'application/json',
-            data: JSON.stringify({
+      return this.compileRaw([
+        {
+          url: '/' + file.name,
+          type: mimeType,
+          data: fileData,
+        },
+        {
+          url: '/manifest.json',
+          type: 'application/json',
+          data: JSON.stringify(
+            {
               xr_type: xrType,
               start_url: file.name,
-            }, null, 2),
-          }
-        ]
-      );
+            },
+            null,
+            2
+          ),
+        },
+      ]);
     };
 
     if (/\.gltf$/.test(file.name)) {
@@ -2045,30 +2155,37 @@ export class XRPackage extends XRNode {
     }
   }
   static compileRaw(files) {
-    const manifestFile = files.find(file => file.url === '/manifest.json');
+    const manifestFile = files.find((file) => file.manifest === true);
     const s = typeof manifestFile.data === 'string' ? manifestFile.data : new TextDecoder().decode(manifestFile.data);
     const j = JSON.parse(s);
-    const {start_url: startUrl} = j;
+    const { start_url: startUrl } = j;
 
     // const manifestUrl = primaryUrl + '/manifest.json';
     const builder = new wbn.BundleBuilder(primaryUrl + '/' + startUrl);
-      // .setManifestURL(manifestUrl);
+    // .setManifestURL(manifestUrl);
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const {url, type, data} = file;
-      builder.addExchange(primaryUrl + url, 200, {
-        'Content-Type': type,
-      }, data);
+      const { url, type, data } = file;
+      builder.addExchange(
+        primaryUrl + url,
+        200,
+        {
+          'Content-Type': type,
+        },
+        data
+      );
     }
     return builder.createBundle();
   }
   async getScreenshotImageUrl() {
     const j = this.getManifestJson();
     if (j) {
-      const {icons = []} = j;
-      const previewIcon = icons.find(icon => icon.type === 'image/png' || icon.type === 'image/jpeg' || icon.type === 'image/gif');
+      const { icons = [] } = j;
+      const previewIcon = icons.find(
+        (icon) => icon.type === 'image/png' || icon.type === 'image/jpeg' || icon.type === 'image/gif'
+      );
       if (previewIcon) {
-        const previewIconFile = this.files.find(file => new URL(file.url).pathname === '/' + previewIcon.src);
+        const previewIconFile = this.files.find((file) => new URL(file.url).pathname === '/' + previewIcon.src);
         if (previewIconFile) {
           const d = previewIconFile.response.body;
           const b = new Blob([d], {
@@ -2106,10 +2223,10 @@ export class XRPackage extends XRNode {
   async getVolumeMesh() {
     const j = this.getManifestJson();
     if (j) {
-      const {icons = []} = j;
-      const previewIcon = icons.find(icon => icon.type === 'model/gltf-binary+preview');
+      const { icons = [] } = j;
+      const previewIcon = icons.find((icon) => icon.type === 'model/gltf-binary+preview');
       if (previewIcon) {
-        const previewIconFile = this.files.find(file => new URL(file.url).pathname === '/' + previewIcon.src);
+        const previewIconFile = this.files.find((file) => new URL(file.url).pathname === '/' + previewIcon.src);
         if (previewIconFile) {
           const d = previewIconFile.response.body;
           const b = new Blob([d], {
@@ -2122,7 +2239,7 @@ export class XRPackage extends XRNode {
               new GLTFLoader().load(u, accept, function onProgress() {}, reject);
             });
             scene = o.scene;
-          } catch(err) {
+          } catch (err) {
             console.warn(err);
             scene = null;
           }
@@ -2141,21 +2258,21 @@ export class XRPackage extends XRNode {
   async getModel() {
     const j = this.getManifestJson();
     if (j) {
-      const {start_url: startUrl, icons = []} = j;
+      const { start_url: startUrl, icons = [] } = j;
 
-      const _loadGltfFileScene = async file => {
+      const _loadGltfFileScene = async (file) => {
         const d = file.response.body;
         const b = new Blob([d], {
           type: 'application/octet-stream',
         });
         const u = URL.createObjectURL(b);
-        const {scene} = await new Promise((accept, reject) => {
+        const { scene } = await new Promise((accept, reject) => {
           new GLTFLoader().load(u, accept, function onProgress() {}, reject);
         });
         URL.revokeObjectURL(u);
         return scene;
       };
-      const _loadVoxFileScene = async file => {
+      const _loadVoxFileScene = async (file) => {
         const d = file.response.body;
         const b = new Blob([d], {
           type: 'application/octet-stream',
@@ -2168,16 +2285,16 @@ export class XRPackage extends XRNode {
         return o;
       };
 
-      const previewIcon = icons.find(icon => icon.type === 'model/gltf-binary');
+      const previewIcon = icons.find((icon) => icon.type === 'model/gltf-binary');
       if (previewIcon) {
-        const previewIconFile = this.files.find(file => new URL(file.url).pathname === '/' + previewIcon.src);
+        const previewIconFile = this.files.find((file) => new URL(file.url).pathname === '/' + previewIcon.src);
         if (previewIconFile) {
           return await _loadGltfFileScene(previewIconFile);
         } else {
           return null;
         }
       } else {
-        const mainModelFile = this.files.find(file => new URL(file.url).pathname === '/' + startUrl);
+        const mainModelFile = this.files.find((file) => new URL(file.url).pathname === '/' + startUrl);
         if (mainModelFile) {
           if (this.type === 'gltf@0.0.1' || this.type === 'vrm@0.0.1') {
             return await _loadGltfFileScene(mainModelFile);
@@ -2208,12 +2325,12 @@ export class XRPackage extends XRNode {
   async ensureRunStop() {
     await this.waitForLoad();
 
-    const {runningEngine} = this;
+    const { runningEngine } = this;
     const currentEngine = this.getParentEngine();
     const running = !!runningEngine;
     const attached = !!currentEngine;
     if (attached && !running) {
-      const {type} = this;
+      const { type } = this;
       const adder = xrTypeAdders[type];
       if (adder) {
         this.runningEngine = currentEngine;
@@ -2223,7 +2340,7 @@ export class XRPackage extends XRNode {
         throw new Error(`unknown xr_type: ${type}`);
       }
     } else if (running && !attached) {
-      const {type} = this;
+      const { type } = this;
       const remover = xrTypeRemovers[type];
       if (remover) {
         this.runningEngine = null;
@@ -2238,27 +2355,29 @@ export class XRPackage extends XRNode {
     if (this.details.transform !== false) {
       this.matrix.copy(m);
       this.matrixWorldNeedsUpdate = true;
-      this.dispatchEvent(new MessageEvent('matrixupdate', {
-        data: this.matrix,
-      }));
+      this.dispatchEvent(
+        new MessageEvent('matrixupdate', {
+          data: this.matrix,
+        })
+      );
     }
   }
   updateMatrixWorld(force = false) {
     if (this.matrixWorldNeedsUpdate || force) {
       this.matrixWorldNeedsUpdate = false;
 
-      this.matrixWorld
-        .copy(this.parent.matrixWorld)
-        .multiply(this.matrix);
+      this.matrixWorld.copy(this.parent.matrixWorld).multiply(this.matrix);
 
       this.context.object &&
         this.context.object.matrix
           .copy(this.matrix)
           .decompose(this.context.object.position, this.context.object.quaternion, this.context.object.scale);
-      this.context.iframe && this.context.iframe.contentWindow && this.context.iframe.contentWindow.xrpackage &&
+      this.context.iframe &&
+        this.context.iframe.contentWindow &&
+        this.context.iframe.contentWindow.xrpackage &&
         this.context.iframe.contentWindow.xrpackage.setMatrix(this.matrixWorld.toArray(localArray));
 
-      this.recurseChildren(p => {
+      this.recurseChildren((p) => {
         p.updateMatrixWorld(true);
       });
     }
@@ -2280,9 +2399,9 @@ export class XRPackage extends XRNode {
   }
   async loadAvatar() {
     if (!this.context.rig) {
-      const {model} = this.context;
+      const { model } = this.context;
       if (model) {
-        model.scene.traverse(o => {
+        model.scene.traverse((o) => {
           o.frustumCulled = false;
         });
         this.context.rig = new Avatar(model, {
@@ -2312,7 +2431,7 @@ export class XRPackage extends XRNode {
   }
   setPose(pose) {
     const [head, leftGamepad, rightGamepad] = pose;
-    const {rig, rigPackage} = this.context;
+    const { rig, rigPackage } = this.context;
     if (rig) {
       rig.inputs.hmd.position.fromArray(head[0]);
       rig.inputs.hmd.quaternion.fromArray(head[1]);
@@ -2328,12 +2447,19 @@ export class XRPackage extends XRNode {
       rig.update();
     } else if (rigPackage) {
       rigPackage.setMatrix(
-        localMatrix.compose(localVector.fromArray(head[0]), localQuaternion.fromArray(head[1]), localVector2.set(1, 1, 1))
+        localMatrix.compose(
+          localVector.fromArray(head[0]),
+          localQuaternion.fromArray(head[1]),
+          localVector2.set(1, 1, 1)
+        )
       );
     }
   }
   setXrFramebuffer(xrfb) {
-    this.context.iframe && this.context.iframe.contentWindow && this.context.iframe.contentWindow.xrpackage && this.context.iframe.contentWindow.xrpackage.setXrFramebuffer(xrfb);
+    this.context.iframe &&
+      this.context.iframe.contentWindow &&
+      this.context.iframe.contentWindow.xrpackage &&
+      this.context.iframe.contentWindow.xrpackage.setXrFramebuffer(xrfb);
   }
   async export() {
     return this.data.slice();
@@ -2345,7 +2471,7 @@ export class XRPackage extends XRNode {
     });
     if (res.ok) {
       const j = await res.json();
-      const {hash} = j;
+      const { hash } = j;
       this.hash = hash;
       return hash;
     } else {
