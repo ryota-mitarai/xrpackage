@@ -143,7 +143,7 @@ const _initSw = async () => {
       }, 10 * 1000);
     });
   }
-  console.log('sw registration', window.registration);
+  // console.log('sw registration', window.registration);
 };
 const swLoadPromise = _initSw().then(() => {});
 

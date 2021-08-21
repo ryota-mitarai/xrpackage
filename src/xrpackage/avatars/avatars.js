@@ -556,7 +556,7 @@ class Avatar {
       Left_leg.getWorldQuaternion(new THREE.Quaternion()).premultiply(armature.quaternion.clone().inverse())
     );
     const flipLeg = legDirection.y < 0.5;
-    console.log('flip', flipZ, flipY, flipLeg);
+
     this.flipZ = flipZ;
     this.flipY = flipY;
     this.flipLeg = flipLeg;
