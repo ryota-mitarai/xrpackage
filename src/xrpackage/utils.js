@@ -2,8 +2,7 @@ import path from './modules/path-browserify.js';
 import parseIntStrict from './modules/parse-int.js';
 import symbols from './symbols.js';
 
-
-const module = {exports: {}};
+const module = { exports: {} };
 
 function _getBaseUrl(u) {
   let result;
@@ -13,7 +12,7 @@ function _getBaseUrl(u) {
     result = location.origin;
   } else {
     if (!/^[a-z]+:/.test(u)) {
-      let {href} = location;
+      let { href } = location;
       href = href.replace(/#.*$/, '');
       u = href + '/' + u;
     }
@@ -41,8 +40,7 @@ function _normalizeUrl(src, baseUrl) {
     src = baseUrl + (!/\/$/.test(baseUrl) ? '/' : '') + src;
   } */
   if (!/^(?:https?|data|blob):/.test(src)) {
-    return new URL(src, baseUrl).href
-      .replace(/^(file:\/\/)\/([a-z]:.*)$/i, '$1$2');
+    return new URL(src, baseUrl).href.replace(/^(file:\/\/)\/([a-z]:.*)$/i, '$1$2');
   } else {
     return src;
   }
@@ -50,7 +48,7 @@ function _normalizeUrl(src, baseUrl) {
 module.exports._normalizeUrl = _normalizeUrl;
 
 function _getProxyUrl(u) {
-  if (/^https?:\/\//.test(u) && !u.startsWith(self.location.origin) || !/^(?:[a-z]+:|\/\.[pdf]\/)/.test(u)) {
+  if ((/^https?:\/\//.test(u) && !u.startsWith(self.location.origin)) || !/^(?:[a-z]+:|\/\.[pdf]\/)/.test(u)) {
     const el = document.querySelector('base');
     const baseUrl = (el && el.href) || self.location.origin;
     const prefix = /^[a-z]+?:\/\/(?:[a-zA-Z0-9\-]+\.)*?exokit\.org(?::[0-9]+)?/.test(u) ? 'd' : 'p';
@@ -89,7 +87,7 @@ module.exports._getProxyUrl = _getProxyUrl;
 });
 module.exports._makeHtmlCollectionProxy = _makeHtmlCollectionProxy; */
 
-const _elementGetter = (self, attribute) => self.listeners(attribute).filter(l => l[symbols.listenerSymbol])[0];
+const _elementGetter = (self, attribute) => self.listeners(attribute).filter((l) => l[symbols.listenerSymbol])[0];
 module.exports._elementGetter = _elementGetter;
 
 const _elementSetter = (self, attribute, cb) => {
@@ -98,7 +96,7 @@ const _elementSetter = (self, attribute, cb) => {
     self.removeEventListener(attribute, listener);
     listener[symbols.listenerSymbol] = false;
   }
-  
+
   if (typeof cb === 'function') {
     self.addEventListener(attribute, cb);
     cb[symbols.listenerSymbol] = true;
@@ -118,7 +116,7 @@ const _makeNullPromise = () => {
 };
 module.exports._makeNullPromise = _makeNullPromise;
 
-const _replaceDocument = async htmlString => {
+const _replaceDocument = async (htmlString) => {
   document.open();
   document.write(htmlString);
   document.close();
@@ -142,17 +140,19 @@ const _replaceDocument = async htmlString => {
 };
 module.exports._replaceDocument = _replaceDocument;
 
-const requestSw = (m = {}, txs = []) => new Promise((accept, reject) => {
-  const mc = new MessageChannel();
-  txs.push(mc.port2);
-  navigator.serviceWorker.controller.postMessage(m, txs);
-  mc.port1.onmessage = () => {
-    accept();
-  };
-});
+const requestSw = (m = {}, txs = []) =>
+  new Promise((accept, reject) => {
+    const mc = new MessageChannel();
+    txs.push(mc.port2);
+    navigator.serviceWorker.controller.postMessage(m, txs);
+    mc.port1.onmessage = () => {
+      accept();
+    };
+  });
 module.exports.requestSw = requestSw;
 
-const hasWebGL2 = !!document.createElement('canvas').getContext('webgl2') && !/iPad|iPhone|iPod/.test(navigator.platform);
+const hasWebGL2 =
+  !!document.createElement('canvas').getContext('webgl2') && !/iPad|iPhone|iPod/.test(navigator.platform);
 module.exports.hasWebGL2 = hasWebGL2;
 class WebGLStateFramebuffer {
   constructor(gl) {

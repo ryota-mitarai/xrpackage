@@ -1,7 +1,7 @@
 import THREE from '../three.module.js';
 import './vrarmik/three-vrm.js';
-import {BufferGeometryUtils} from 'https://static.xrpackage.org/BufferGeometryUtils.js';
-import {fixSkeletonZForward} from './vrarmik/SkeletonUtils.js';
+import { BufferGeometryUtils } from 'https://static.xrpackage.org/BufferGeometryUtils.js';
+import { fixSkeletonZForward } from './vrarmik/SkeletonUtils.js';
 import PoseManager from './vrarmik/PoseManager.js';
 import ShoulderTransforms from './vrarmik/ShoulderTransforms.js';
 import LegsManager from './vrarmik/LegsManager.js';
@@ -9,9 +9,9 @@ import MicrophoneWorker from './microphone-worker.js';
 import skeletonString from './skeleton.js';
 
 const zeroVector = new THREE.Vector3();
-const upRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2);
-const leftRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI*0.5);
-const rightRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI*0.5);
+const upRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2);
+const leftRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI * 0.5);
+const rightRotation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI * 0.5);
 const z180Quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
 const localVector = new THREE.Vector3();
@@ -24,7 +24,7 @@ const localQuaternion = new THREE.Quaternion();
 const localQuaternion2 = new THREE.Quaternion();
 const localMatrix = new THREE.Matrix4();
 
-const _localizeMatrixWorld = bone => {
+const _localizeMatrixWorld = (bone) => {
   bone.matrix.copy(bone.matrixWorld);
   if (bone.parent) {
     bone.matrix.premultiply(new THREE.Matrix4().getInverse(bone.parent.matrixWorld));
@@ -62,10 +62,11 @@ const _copySkeleton = (src, dst) => {
   dst.calculateInverses();
 };
 
-const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3)
-  .applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(
-    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1)))
-  );
+const cubeGeometry = new THREE.ConeBufferGeometry(0.05, 0.2, 3).applyMatrix4(
+  new THREE.Matrix4().makeRotationFromQuaternion(
+    new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 1))
+  )
+);
 const cubeGeometryPositions = cubeGeometry.attributes.position.array;
 const numCubeGeometryPositions = cubeGeometryPositions.length;
 const _makeDebugMeshes = () => {
@@ -84,32 +85,37 @@ const _makeDebugMeshes = () => {
     return index;
   };
   const attributes = {
-    eyes: _makeCubeMesh(0xFF0000),
-    head: _makeCubeMesh(0xFF8080),
+    eyes: _makeCubeMesh(0xff0000),
+    head: _makeCubeMesh(0xff8080),
 
-    chest: _makeCubeMesh(0xFFFF00),
-    leftShoulder: _makeCubeMesh(0x00FF00),
+    chest: _makeCubeMesh(0xffff00),
+    leftShoulder: _makeCubeMesh(0x00ff00),
     rightShoulder: _makeCubeMesh(0x008000),
-    leftUpperArm: _makeCubeMesh(0x00FFFF),
+    leftUpperArm: _makeCubeMesh(0x00ffff),
     rightUpperArm: _makeCubeMesh(0x008080),
-    leftLowerArm: _makeCubeMesh(0x0000FF),
+    leftLowerArm: _makeCubeMesh(0x0000ff),
     rightLowerArm: _makeCubeMesh(0x000080),
-    leftHand: _makeCubeMesh(0xFFFFFF),
+    leftHand: _makeCubeMesh(0xffffff),
     rightHand: _makeCubeMesh(0x808080),
 
-    hips: _makeCubeMesh(0xFF0000),
-    leftUpperLeg: _makeCubeMesh(0xFFFF00),
+    hips: _makeCubeMesh(0xff0000),
+    leftUpperLeg: _makeCubeMesh(0xffff00),
     rightUpperLeg: _makeCubeMesh(0x808000),
-    leftLowerLeg: _makeCubeMesh(0x00FF00),
+    leftLowerLeg: _makeCubeMesh(0x00ff00),
     rightLowerLeg: _makeCubeMesh(0x008000),
-    leftFoot: _makeCubeMesh(0xFFFFFF),
+    leftFoot: _makeCubeMesh(0xffffff),
     rightFoot: _makeCubeMesh(0x808080),
   };
   const geometry = BufferGeometryUtils.mergeBufferGeometries(geometries);
   for (const k in attributes) {
     const index = attributes[k];
     const attribute = new THREE.BufferAttribute(
-      new Float32Array(geometry.attributes.position.array.buffer, geometry.attributes.position.array.byteOffset + index*numCubeGeometryPositions*Float32Array.BYTES_PER_ELEMENT, numCubeGeometryPositions),
+      new Float32Array(
+        geometry.attributes.position.array.buffer,
+        geometry.attributes.position.array.byteOffset +
+          index * numCubeGeometryPositions * Float32Array.BYTES_PER_ELEMENT,
+        numCubeGeometryPositions
+      ),
       3
     );
     attribute.visible = true;
@@ -125,9 +131,9 @@ const _makeDebugMeshes = () => {
   return mesh;
 };
 
-const _getTailBones = skeleton => {
+const _getTailBones = (skeleton) => {
   const result = [];
-  const _recurse = bones => {
+  const _recurse = (bones) => {
     for (let i = 0; i < bones.length; i++) {
       const bone = bones[i];
       if (bone.children.length === 0) {
@@ -168,7 +174,7 @@ const _distanceToParentBone = (bone, parentBone) => {
   return Infinity;
 };
 const _findClosestChildBone = (bone, pred) => {
-  const _recurse = bone => {
+  const _recurse = (bone) => {
     if (pred(bone)) {
       return bone;
     } else {
@@ -180,7 +186,7 @@ const _findClosestChildBone = (bone, pred) => {
       }
       return null;
     }
-  }
+  };
   return _recurse(bone);
 };
 const _traverseChild = (bone, distance) => {
@@ -206,16 +212,18 @@ const _countCharacters = (name, regex) => {
   }
   return result;
 };
-const _findHips = skeleton => skeleton.bones.find(bone => /hip/i.test(bone.name));
-const _findHead = tailBones => {
-  const headBones = tailBones.map(tailBone => {
-    const headBone = _findFurthestParentBone(tailBone, bone => /head/i.test(bone.name));
-    if (headBone) {
-      return headBone;
-    } else {
-      return null;
-    }
-  }).filter(bone => bone);
+const _findHips = (skeleton) => skeleton.bones.find((bone) => /hip/i.test(bone.name));
+const _findHead = (tailBones) => {
+  const headBones = tailBones
+    .map((tailBone) => {
+      const headBone = _findFurthestParentBone(tailBone, (bone) => /head/i.test(bone.name));
+      if (headBone) {
+        return headBone;
+      } else {
+        return null;
+      }
+    })
+    .filter((bone) => bone);
   const headBone = headBones.length > 0 ? headBones[0] : null;
   if (headBone) {
     return headBone;
@@ -225,24 +233,30 @@ const _findHead = tailBones => {
 };
 const _findEye = (tailBones, left) => {
   const regexp = left ? /l/i : /r/i;
-  const eyeBones = tailBones.map(tailBone => {
-    const eyeBone = _findFurthestParentBone(tailBone, bone => /eye/i.test(bone.name) && regexp.test(bone.name.replace(/eye/gi, '')));
-    if (eyeBone) {
-      return eyeBone;
-    } else {
-      return null;
-    }
-  }).filter(spec => spec).sort((a, b) => {
-    const aName = a.name.replace(/shoulder/gi, '');
-    const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
-    const bName = b.name.replace(/shoulder/gi, '');
-    const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
-    if (!left) {
-      return aLeftBalance - bLeftBalance;
-    } else {
-      return bLeftBalance - aLeftBalance;
-    }
-  });
+  const eyeBones = tailBones
+    .map((tailBone) => {
+      const eyeBone = _findFurthestParentBone(
+        tailBone,
+        (bone) => /eye/i.test(bone.name) && regexp.test(bone.name.replace(/eye/gi, ''))
+      );
+      if (eyeBone) {
+        return eyeBone;
+      } else {
+        return null;
+      }
+    })
+    .filter((spec) => spec)
+    .sort((a, b) => {
+      const aName = a.name.replace(/shoulder/gi, '');
+      const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
+      const bName = b.name.replace(/shoulder/gi, '');
+      const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
+      if (!left) {
+        return aLeftBalance - bLeftBalance;
+      } else {
+        return bLeftBalance - aLeftBalance;
+      }
+    });
   const eyeBone = eyeBones.length > 0 ? eyeBones[0] : null;
   if (eyeBone) {
     return eyeBone;
@@ -260,56 +274,17 @@ const _findSpine = (chest, hips) => {
 };
 const _findShoulder = (tailBones, left) => {
   const regexp = left ? /l/i : /r/i;
-  const shoulderBones = tailBones.map(tailBone => {
-    const shoulderBone = _findClosestParentBone(tailBone, bone => /shoulder/i.test(bone.name) && regexp.test(bone.name.replace(/shoulder/gi, '')));
-    if (shoulderBone) {
-      const distance = _distanceToParentBone(tailBone, shoulderBone);
-      if (distance >= 3) {
-        return {
-          bone: shoulderBone,
-          distance,
-        };
-      } else {
-        return null;
-      }
-    } else {
-      return null;
-    }
-  }).filter(spec => spec).sort((a, b) => {
-    const diff = b.distance - a.distance;
-    if (diff !== 0) {
-      return diff;
-    } else {
-      const aName = a.bone.name.replace(/shoulder/gi, '');
-      const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
-      const bName = b.bone.name.replace(/shoulder/gi, '');
-      const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
-      if (!left) {
-        return aLeftBalance - bLeftBalance;
-      } else {
-        return bLeftBalance - aLeftBalance;
-      }
-    }
-  });
-  const shoulderBone = shoulderBones.length > 0 ? shoulderBones[0].bone : null;
-  if (shoulderBone) {
-    return shoulderBone;
-  } else {
-    return null;
-  }
-};
-const _findHand = shoulderBone => _findClosestChildBone(shoulderBone, bone => /hand|wrist/i.test(bone.name));
-const _findFoot = (tailBones, left) => {
-  const regexp = left ? /l/i : /r/i;
-  const legBones = tailBones.map(tailBone => {
-    const footBone = _findFurthestParentBone(tailBone, bone => /foot|ankle/i.test(bone.name) && regexp.test(bone.name.replace(/foot|ankle/gi, '')));
-    if (footBone) {
-      const legBone = _findFurthestParentBone(footBone, bone => /leg|thigh/i.test(bone.name) && regexp.test(bone.name.replace(/leg|thigh/gi, '')));
-      if (legBone) {
-        const distance = _distanceToParentBone(footBone, legBone);
-        if (distance >= 2) {
+  const shoulderBones = tailBones
+    .map((tailBone) => {
+      const shoulderBone = _findClosestParentBone(
+        tailBone,
+        (bone) => /shoulder/i.test(bone.name) && regexp.test(bone.name.replace(/shoulder/gi, ''))
+      );
+      if (shoulderBone) {
+        const distance = _distanceToParentBone(tailBone, shoulderBone);
+        if (distance >= 3) {
           return {
-            footBone,
+            bone: shoulderBone,
             distance,
           };
         } else {
@@ -318,25 +293,79 @@ const _findFoot = (tailBones, left) => {
       } else {
         return null;
       }
-    } else {
-      return null;
-    }
-  }).filter(spec => spec).sort((a, b) => {
-    const diff = b.distance - a.distance;
-    if (diff !== 0) {
-      return diff;
-    } else {
-      const aName = a.footBone.name.replace(/foot|ankle/gi, '');
-      const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
-      const bName = b.footBone.name.replace(/foot|ankle/gi, '');
-      const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
-      if (!left) {
-        return aLeftBalance - bLeftBalance;
+    })
+    .filter((spec) => spec)
+    .sort((a, b) => {
+      const diff = b.distance - a.distance;
+      if (diff !== 0) {
+        return diff;
       } else {
-        return bLeftBalance - aLeftBalance;
+        const aName = a.bone.name.replace(/shoulder/gi, '');
+        const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
+        const bName = b.bone.name.replace(/shoulder/gi, '');
+        const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
+        if (!left) {
+          return aLeftBalance - bLeftBalance;
+        } else {
+          return bLeftBalance - aLeftBalance;
+        }
       }
-    }
-  });
+    });
+  const shoulderBone = shoulderBones.length > 0 ? shoulderBones[0].bone : null;
+  if (shoulderBone) {
+    return shoulderBone;
+  } else {
+    return null;
+  }
+};
+const _findHand = (shoulderBone) => _findClosestChildBone(shoulderBone, (bone) => /hand|wrist/i.test(bone.name));
+const _findFoot = (tailBones, left) => {
+  const regexp = left ? /l/i : /r/i;
+  const legBones = tailBones
+    .map((tailBone) => {
+      const footBone = _findFurthestParentBone(
+        tailBone,
+        (bone) => /foot|ankle/i.test(bone.name) && regexp.test(bone.name.replace(/foot|ankle/gi, ''))
+      );
+      if (footBone) {
+        const legBone = _findFurthestParentBone(
+          footBone,
+          (bone) => /leg|thigh/i.test(bone.name) && regexp.test(bone.name.replace(/leg|thigh/gi, ''))
+        );
+        if (legBone) {
+          const distance = _distanceToParentBone(footBone, legBone);
+          if (distance >= 2) {
+            return {
+              footBone,
+              distance,
+            };
+          } else {
+            return null;
+          }
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    })
+    .filter((spec) => spec)
+    .sort((a, b) => {
+      const diff = b.distance - a.distance;
+      if (diff !== 0) {
+        return diff;
+      } else {
+        const aName = a.footBone.name.replace(/foot|ankle/gi, '');
+        const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
+        const bName = b.footBone.name.replace(/foot|ankle/gi, '');
+        const bLeftBalance = _countCharacters(bName, /l/i) - _countCharacters(bName, /r/i);
+        if (!left) {
+          return aLeftBalance - bLeftBalance;
+        } else {
+          return bLeftBalance - aLeftBalance;
+        }
+      }
+    });
   const footBone = legBones.length > 0 ? legBones[0].footBone : null;
   if (footBone) {
     return footBone;
@@ -344,8 +373,8 @@ const _findFoot = (tailBones, left) => {
     return null;
   }
 };
-const _findArmature = bone => {
-  for (;; bone = bone.parent) {
+const _findArmature = (bone) => {
+  for (; ; bone = bone.parent) {
     if (!bone.isBone) {
       return bone;
     }
@@ -353,34 +382,38 @@ const _findArmature = bone => {
   return null; // can't happen
 };
 
-const _exportBone = bone => {
-  return [bone.name, bone.position.toArray().concat(bone.quaternion.toArray()).concat(bone.scale.toArray()), bone.children.map(b => _exportBone(b))];
+const _exportBone = (bone) => {
+  return [
+    bone.name,
+    bone.position.toArray().concat(bone.quaternion.toArray()).concat(bone.scale.toArray()),
+    bone.children.map((b) => _exportBone(b)),
+  ];
 };
-const _exportSkeleton = skeleton => {
+const _exportSkeleton = (skeleton) => {
   const hips = _findHips(skeleton);
   const armature = _findArmature(hips);
   return JSON.stringify(_exportBone(armature));
-}
+};
 const _importObject = (b, Cons, ChildCons) => {
   const [name, array, children] = b;
   const bone = new Cons();
   bone.name = name;
   bone.position.fromArray(array, 0);
   bone.quaternion.fromArray(array, 3);
-  bone.scale.fromArray(array, 3+4);
+  bone.scale.fromArray(array, 3 + 4);
   for (let i = 0; i < children.length; i++) {
     bone.add(_importObject(children[i], ChildCons, ChildCons));
   }
   return bone;
 };
-const _importArmature = b => _importObject(b, THREE.Object3D, THREE.Bone);
-const _importSkeleton = s => {
+const _importArmature = (b) => _importObject(b, THREE.Object3D, THREE.Bone);
+const _importSkeleton = (s) => {
   const armature = _importArmature(JSON.parse(s));
   return new THREE.Skeleton(armature.children);
 };
 
 class Avatar {
-	constructor(object, options = {}) {
+  constructor(object, options = {}) {
     const model = (() => {
       let o = object;
       if (o && !o.isMesh) {
@@ -392,7 +425,7 @@ class Avatar {
         const skinnedMesh = new THREE.Object3D();
         skinnedMesh.isSkinnedMesh = true;
         skinnedMesh.skeleton = null;
-        skinnedMesh.bind = function(skeleton) {
+        skinnedMesh.bind = function (skeleton) {
           this.skeleton = skeleton;
         };
         skinnedMesh.bind(_importSkeleton(skeletonString));
@@ -411,18 +444,20 @@ class Avatar {
 
     model.updateMatrixWorld(true);
     const skinnedMeshes = [];
-	  model.traverse(o => {
-	    if (o.isSkinnedMesh) {
+    model.traverse((o) => {
+      if (o.isSkinnedMesh) {
         skinnedMeshes.push(o);
-	    }
-	  });
+      }
+    });
     skinnedMeshes.sort((a, b) => b.skeleton.bones.length - a.skeleton.bones.length);
     this.skinnedMeshes = skinnedMeshes;
 
-    const skeletonSkinnedMesh = skinnedMeshes.find(o => o.skeleton.bones[0].parent) || null;
+    const skeletonSkinnedMesh = skinnedMeshes.find((o) => o.skeleton.bones[0].parent) || null;
     const skeleton = skeletonSkinnedMesh && skeletonSkinnedMesh.skeleton;
     // console.log('got skeleton', skinnedMeshes, skeleton, _exportSkeleton(skeleton));
-    const poseSkeletonSkinnedMesh = skeleton ? skinnedMeshes.find(o => o.skeleton !== skeleton && o.skeleton.bones.length >= skeleton.bones.length) : null;
+    const poseSkeletonSkinnedMesh = skeleton
+      ? skinnedMeshes.find((o) => o.skeleton !== skeleton && o.skeleton.bones.length >= skeleton.bones.length)
+      : null;
     const poseSkeleton = poseSkeletonSkinnedMesh && poseSkeletonSkinnedMesh.skeleton;
     if (poseSkeleton) {
       _copySkeleton(poseSkeleton, skeleton);
@@ -437,63 +472,63 @@ class Avatar {
       this.debugMeshes = null;
     }
 
-	  const tailBones = _getTailBones(skeleton);
+    const tailBones = _getTailBones(skeleton);
     // const tailBones = skeleton.bones.filter(bone => bone.children.length === 0);
 
-	  const Eye_L = _findEye(tailBones, true);
-	  const Eye_R = _findEye(tailBones, false);
-	  const Head = _findHead(tailBones);
-	  const Neck = Head.parent;
-	  const Chest = Neck.parent;
-	  const Hips = _findHips(skeleton);
-	  const Spine = _findSpine(Chest, Hips);
-	  const Left_shoulder = _findShoulder(tailBones, true);
-	  const Left_wrist = _findHand(Left_shoulder);
-	  const Left_elbow = Left_wrist.parent;
-	  const Left_arm = Left_elbow.parent;
-	  const Right_shoulder = _findShoulder(tailBones, false);
-	  const Right_wrist = _findHand(Right_shoulder);
-	  const Right_elbow = Right_wrist.parent;
-	  const Right_arm = Right_elbow.parent;
-	  const Left_ankle = _findFoot(tailBones, true);
-	  const Left_knee = Left_ankle.parent;
-	  const Left_leg = Left_knee.parent;
-	  const Right_ankle = _findFoot(tailBones, false);
-	  const Right_knee = Right_ankle.parent;
-	  const Right_leg = Right_knee.parent;
+    const Eye_L = _findEye(tailBones, true);
+    const Eye_R = _findEye(tailBones, false);
+    const Head = _findHead(tailBones);
+    const Neck = Head.parent;
+    const Chest = Neck.parent;
+    const Hips = _findHips(skeleton);
+    const Spine = _findSpine(Chest, Hips);
+    const Left_shoulder = _findShoulder(tailBones, true);
+    const Left_wrist = _findHand(Left_shoulder);
+    const Left_elbow = Left_wrist.parent;
+    const Left_arm = Left_elbow.parent;
+    const Right_shoulder = _findShoulder(tailBones, false);
+    const Right_wrist = _findHand(Right_shoulder);
+    const Right_elbow = Right_wrist.parent;
+    const Right_arm = Right_elbow.parent;
+    const Left_ankle = _findFoot(tailBones, true);
+    const Left_knee = Left_ankle.parent;
+    const Left_leg = Left_knee.parent;
+    const Right_ankle = _findFoot(tailBones, false);
+    const Right_knee = Right_ankle.parent;
+    const Right_leg = Right_knee.parent;
     const modelBones = {
-	    Hips,
-	    Spine,
-	    Chest,
-	    Neck,
-	    Head,
-	    /* Eye_L,
+      Hips,
+      Spine,
+      Chest,
+      Neck,
+      Head,
+      /* Eye_L,
 	    Eye_R, */
 
-	    Left_shoulder,
-	    Left_arm,
-	    Left_elbow,
-	    Left_wrist,
-	    Left_leg,
-	    Left_knee,
-	    Left_ankle,
+      Left_shoulder,
+      Left_arm,
+      Left_elbow,
+      Left_wrist,
+      Left_leg,
+      Left_knee,
+      Left_ankle,
 
-	    Right_shoulder,
-	    Right_arm,
-	    Right_elbow,
-	    Right_wrist,
-	    Right_leg,
-	    Right_knee,
-	    Right_ankle,
-	  };
-	  this.modelBones = modelBones;
+      Right_shoulder,
+      Right_arm,
+      Right_elbow,
+      Right_wrist,
+      Right_leg,
+      Right_knee,
+      Right_ankle,
+    };
+    this.modelBones = modelBones;
     /* for (const k in modelBones) {
       if (!modelBones[k]) {
         console.warn('missing bone', k);
       }
     } */
 
-	  const armature = _findArmature(Hips);
+    const armature = _findArmature(Hips);
 
     const _getEyePosition = () => {
       if (Eye_L && Eye_R) {
@@ -501,7 +536,9 @@ class Avatar {
           .add(Eye_R.getWorldPosition(new THREE.Vector3()))
           .divideScalar(2);
       } else {
-        const neckToHeadDiff = Head.getWorldPosition(new THREE.Vector3()).sub(Neck.getWorldPosition(new THREE.Vector3()));
+        const neckToHeadDiff = Head.getWorldPosition(new THREE.Vector3()).sub(
+          Neck.getWorldPosition(new THREE.Vector3())
+        );
         if (neckToHeadDiff.z < 0) {
           neckToHeadDiff.z *= -1;
         }
@@ -509,15 +546,19 @@ class Avatar {
       }
     };
     // const eyeDirection = _getEyePosition().sub(Head.getWorldPosition(new Vector3()));
-    const leftArmDirection = Left_wrist.getWorldPosition(new THREE.Vector3()).sub(Head.getWorldPosition(new THREE.Vector3()));
-	  const flipZ = leftArmDirection.x < 0;//eyeDirection.z < 0;
+    const leftArmDirection = Left_wrist.getWorldPosition(new THREE.Vector3()).sub(
+      Head.getWorldPosition(new THREE.Vector3())
+    );
+    const flipZ = leftArmDirection.x < 0; //eyeDirection.z < 0;
     const armatureDirection = new THREE.Vector3(0, 1, 0).applyQuaternion(armature.quaternion);
     const flipY = armatureDirection.z < -0.5;
-    const legDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(Left_leg.getWorldQuaternion(new THREE.Quaternion()).premultiply(armature.quaternion.clone().inverse()));
+    const legDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(
+      Left_leg.getWorldQuaternion(new THREE.Quaternion()).premultiply(armature.quaternion.clone().inverse())
+    );
     const flipLeg = legDirection.y < 0.5;
-	  console.log('flip', flipZ, flipY, flipLeg);
-	  this.flipZ = flipZ;
-	  this.flipY = flipY;
+    console.log('flip', flipZ, flipY, flipLeg);
+    this.flipZ = flipZ;
+    this.flipY = flipY;
     this.flipLeg = flipLeg;
 
     const armatureQuaternion = armature.quaternion.clone();
@@ -527,13 +568,13 @@ class Avatar {
     armature.scale.set(1, 1, 1);
     armature.updateMatrix();
 
-    Head.traverse(o => {
+    Head.traverse((o) => {
       o.savedPosition = o.position.clone();
       o.savedMatrixWorld = o.matrixWorld.clone();
     });
 
     const allHairBones = [];
-    const _recurseAllHairBones = bones => {
+    const _recurseAllHairBones = (bones) => {
       for (let i = 0; i < bones.length; i++) {
         const bone = bones[i];
         if (/hair/i.test(bone.name)) {
@@ -543,14 +584,17 @@ class Avatar {
       }
     };
     _recurseAllHairBones(skeleton.bones);
-    const hairBones = tailBones.filter(bone => /hair/i.test(bone.name)).map(bone => {
-      for (; bone; bone = bone.parent) {
-        if (bone.parent === Head) {
-          return bone;
+    const hairBones = tailBones
+      .filter((bone) => /hair/i.test(bone.name))
+      .map((bone) => {
+        for (; bone; bone = bone.parent) {
+          if (bone.parent === Head) {
+            return bone;
+          }
         }
-      }
-      return null;
-    }).filter(bone => bone);
+        return null;
+      })
+      .filter((bone) => bone);
     this.allHairBones = allHairBones;
     this.hairBones = hairBones;
 
@@ -574,9 +618,9 @@ class Avatar {
         if (!object.parser.json.extensions.VRM) {
           object.parser.json.extensions.VRM = {
             secondaryAnimation: {
-              boneGroups: this.hairBones.map(hairBone => {
+              boneGroups: this.hairBones.map((hairBone) => {
                 const boneIndices = [];
-                const _recurse = bone => {
+                const _recurse = (bone) => {
                   boneIndices.push(this.allHairBones.indexOf(bone));
                   if (bone.children.length > 0) {
                     _recurse(bone.children[0]);
@@ -590,7 +634,7 @@ class Avatar {
                   gravityDir: {
                     x: 0,
                     y: -1,
-                    z: 0
+                    z: 0,
                   },
                   dragForce: 0.3,
                   center: -1,
@@ -610,16 +654,19 @@ class Avatar {
           };
         }
 
-        springBoneManagerPromise = new THREE.VRMSpringBoneImporter().import(object)
-          .then(springBoneManager => {
-            this.springBoneManager = springBoneManager;
-          });
+        springBoneManagerPromise = new THREE.VRMSpringBoneImporter().import(object).then((springBoneManager) => {
+          this.springBoneManager = springBoneManager;
+        });
       });
     }
 
     const _findFinger = (r, left) => {
       const fingerTipBone = tailBones
-        .filter(bone => r.test(bone.name) && _findClosestParentBone(bone, bone => bone === modelBones.Left_wrist || bone === modelBones.Right_wrist))
+        .filter(
+          (bone) =>
+            r.test(bone.name) &&
+            _findClosestParentBone(bone, (bone) => bone === modelBones.Left_wrist || bone === modelBones.Right_wrist)
+        )
         .sort((a, b) => {
           const aName = a.name.replace(r, '');
           const aLeftBalance = _countCharacters(aName, /l/i) - _countCharacters(aName, /r/i);
@@ -631,7 +678,8 @@ class Avatar {
             return bLeftBalance - aLeftBalance;
           }
         });
-      const fingerRootBone = fingerTipBone.length > 0 ? _findFurthestParentBone(fingerTipBone[0], bone => r.test(bone.name)) : null;
+      const fingerRootBone =
+        fingerTipBone.length > 0 ? _findFurthestParentBone(fingerTipBone[0], (bone) => r.test(bone.name)) : null;
       return fingerRootBone;
     };
     const fingerBones = {
@@ -653,7 +701,7 @@ class Avatar {
     this.fingerBones = fingerBones;
 
     const preRotations = {};
-    const _ensurePrerotation = k => {
+    const _ensurePrerotation = (k) => {
       const boneName = modelBones[k].name;
       if (!preRotations[boneName]) {
         preRotations[boneName] = new THREE.Quaternion();
@@ -661,135 +709,163 @@ class Avatar {
       return preRotations[boneName];
     };
     if (flipY) {
-      ['Hips'].forEach(k => {
-        _ensurePrerotation(k).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2));
+      ['Hips'].forEach((k) => {
+        _ensurePrerotation(k).premultiply(
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+        );
       });
     }
     if (flipZ) {
-      ['Hips'].forEach(k => {
+      ['Hips'].forEach((k) => {
         _ensurePrerotation(k).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
       });
     }
     if (flipLeg) {
-      ['Left_leg', 'Right_leg'].forEach(k => {
-        _ensurePrerotation(k).premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI/2));
+      ['Left_leg', 'Right_leg'].forEach((k) => {
+        _ensurePrerotation(k).premultiply(
+          new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2)
+        );
       });
     }
 
     const qrArm = flipZ ? Left_arm : Right_arm;
     const qrElbow = flipZ ? Left_elbow : Right_elbow;
     const qrWrist = flipZ ? Left_wrist : Right_wrist;
-    const qr = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2)
+    const qr = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2)
       .premultiply(
-        new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(
-          new THREE.Vector3(0, 0, 0),
-          qrElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse)
-            .sub(qrArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
-            .applyQuaternion(armatureQuaternion),
-          new THREE.Vector3(0, 1, 0),
-        ))
+        new THREE.Quaternion().setFromRotationMatrix(
+          new THREE.Matrix4().lookAt(
+            new THREE.Vector3(0, 0, 0),
+            qrElbow
+              .getWorldPosition(new THREE.Vector3())
+              .applyMatrix4(armatureMatrixInverse)
+              .sub(qrArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
+              .applyQuaternion(armatureQuaternion),
+            new THREE.Vector3(0, 1, 0)
+          )
+        )
       );
-    const qr2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI/2)
+    const qr2 = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2)
       .premultiply(
-        new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(
-          new THREE.Vector3(0, 0, 0),
-          qrWrist.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse)
-            .sub(qrElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
-            .applyQuaternion(armatureQuaternion),
-          new THREE.Vector3(0, 1, 0),
-        ))
+        new THREE.Quaternion().setFromRotationMatrix(
+          new THREE.Matrix4().lookAt(
+            new THREE.Vector3(0, 0, 0),
+            qrWrist
+              .getWorldPosition(new THREE.Vector3())
+              .applyMatrix4(armatureMatrixInverse)
+              .sub(qrElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
+              .applyQuaternion(armatureQuaternion),
+            new THREE.Vector3(0, 1, 0)
+          )
+        )
       );
     const qlArm = flipZ ? Right_arm : Left_arm;
     const qlElbow = flipZ ? Right_elbow : Left_elbow;
     const qlWrist = flipZ ? Right_wrist : Left_wrist;
-    const ql = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
+    const ql = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
       .premultiply(
-        new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(
-          new THREE.Vector3(0, 0, 0),
-          qlElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse)
-            .sub(qlArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
-            .applyQuaternion(armatureQuaternion),
-          new THREE.Vector3(0, 1, 0),
-        ))
+        new THREE.Quaternion().setFromRotationMatrix(
+          new THREE.Matrix4().lookAt(
+            new THREE.Vector3(0, 0, 0),
+            qlElbow
+              .getWorldPosition(new THREE.Vector3())
+              .applyMatrix4(armatureMatrixInverse)
+              .sub(qlArm.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
+              .applyQuaternion(armatureQuaternion),
+            new THREE.Vector3(0, 1, 0)
+          )
+        )
       );
-    const ql2 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI/2)
+    const ql2 = new THREE.Quaternion()
+      .setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
       .premultiply(
-        new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(
-          new THREE.Vector3(0, 0, 0),
-          qlWrist.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse)
-            .sub(qlElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
-            .applyQuaternion(armatureQuaternion),
-          new THREE.Vector3(0, 1, 0),
-        ))
+        new THREE.Quaternion().setFromRotationMatrix(
+          new THREE.Matrix4().lookAt(
+            new THREE.Vector3(0, 0, 0),
+            qlWrist
+              .getWorldPosition(new THREE.Vector3())
+              .applyMatrix4(armatureMatrixInverse)
+              .sub(qlElbow.getWorldPosition(new THREE.Vector3()).applyMatrix4(armatureMatrixInverse))
+              .applyQuaternion(armatureQuaternion),
+            new THREE.Vector3(0, 1, 0)
+          )
+        )
       );
 
-    _ensurePrerotation('Right_arm')
-      .multiply(qr.clone().inverse());
-    _ensurePrerotation('Right_elbow')
-      .multiply(qr.clone())
-      .premultiply(qr2.clone().inverse());
-    _ensurePrerotation('Left_arm')
-      .multiply(ql.clone().inverse());
-    _ensurePrerotation('Left_elbow')
-      .multiply(ql.clone())
-      .premultiply(ql2.clone().inverse());
+    _ensurePrerotation('Right_arm').multiply(qr.clone().inverse());
+    _ensurePrerotation('Right_elbow').multiply(qr.clone()).premultiply(qr2.clone().inverse());
+    _ensurePrerotation('Left_arm').multiply(ql.clone().inverse());
+    _ensurePrerotation('Left_elbow').multiply(ql.clone()).premultiply(ql2.clone().inverse());
 
-    _ensurePrerotation('Left_leg').premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0),  -Math.PI/2));
-    _ensurePrerotation('Right_leg').premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0),  -Math.PI/2));
+    _ensurePrerotation('Left_leg').premultiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+    );
+    _ensurePrerotation('Right_leg').premultiply(
+      new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+    );
 
     for (const k in preRotations) {
       preRotations[k].inverse();
     }
-	  fixSkeletonZForward(armature.children[0], {
-	    preRotations,
-	  });
-	  model.traverse(o => {
-	    if (o.isSkinnedMesh) {
-	      o.bind((o.skeleton.bones.length === skeleton.bones.length && o.skeleton.bones.every((bone, i) => bone === skeleton.bones[i])) ? skeleton : o.skeleton);
-	    }
-	  });
+    fixSkeletonZForward(armature.children[0], {
+      preRotations,
+    });
+    model.traverse((o) => {
+      if (o.isSkinnedMesh) {
+        o.bind(
+          o.skeleton.bones.length === skeleton.bones.length &&
+            o.skeleton.bones.every((bone, i) => bone === skeleton.bones[i])
+            ? skeleton
+            : o.skeleton
+        );
+      }
+    });
     if (flipY) {
-      modelBones.Hips.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI/2));
+      modelBones.Hips.quaternion.premultiply(
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+      );
     }
-	  if (!flipZ) {
-	    /* ['Left_arm', 'Right_arm'].forEach((name, i) => {
+    if (!flipZ) {
+      /* ['Left_arm', 'Right_arm'].forEach((name, i) => {
 		    const bone = modelBones[name];
 		    if (bone) {
 		      bone.quaternion.premultiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), (i === 0 ? 1 : -1) * Math.PI*0.25));
 		    }
 		  }); */
-		} else {
-		  modelBones.Hips.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI));
-		}
+    } else {
+      modelBones.Hips.quaternion.premultiply(
+        new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI)
+      );
+    }
     modelBones.Right_arm.quaternion.premultiply(qr.clone().inverse());
-    modelBones.Right_elbow.quaternion
-      .premultiply(qr)
-      .premultiply(qr2.clone().inverse());
+    modelBones.Right_elbow.quaternion.premultiply(qr).premultiply(qr2.clone().inverse());
     modelBones.Left_arm.quaternion.premultiply(ql.clone().inverse());
-    modelBones.Left_elbow.quaternion
-      .premultiply(ql)
-      .premultiply(ql2.clone().inverse());
-	  model.updateMatrixWorld(true);
+    modelBones.Left_elbow.quaternion.premultiply(ql).premultiply(ql2.clone().inverse());
+    model.updateMatrixWorld(true);
 
-    Hips.traverse(bone => {
+    Hips.traverse((bone) => {
       bone.initialQuaternion = bone.quaternion.clone();
     });
 
-	  const _averagePoint = points => {
+    const _averagePoint = (points) => {
       const result = new THREE.Vector3();
       for (let i = 0; i < points.length; i++) {
         result.add(points[i]);
       }
       result.divideScalar(points.length);
       return result;
-	  };
+    };
     const eyePosition = _getEyePosition();
 
-		this.poseManager = new PoseManager(this);
-		this.shoulderTransforms = new ShoulderTransforms(this);
-		this.legsManager = new LegsManager(this);
+    this.poseManager = new PoseManager(this);
+    this.shoulderTransforms = new ShoulderTransforms(this);
+    this.legsManager = new LegsManager(this);
 
-    const _getOffset = (bone, parent = bone.parent) => bone.getWorldPosition(new THREE.Vector3()).sub(parent.getWorldPosition(new THREE.Vector3()));
+    const _getOffset = (bone, parent = bone.parent) =>
+      bone.getWorldPosition(new THREE.Vector3()).sub(parent.getWorldPosition(new THREE.Vector3()));
     this.initializeBonePositions({
       spine: _getOffset(modelBones.Spine),
       chest: _getOffset(modelBones.Chest, modelBones.Spine),
@@ -816,20 +892,27 @@ class Avatar {
       rightFoot: _getOffset(modelBones.Left_ankle),
     });
 
-    this.height = eyePosition.sub(_averagePoint([modelBones.Left_ankle.getWorldPosition(new THREE.Vector3()), modelBones.Right_ankle.getWorldPosition(new THREE.Vector3())])).y;
-    this.shoulderWidth = modelBones.Left_arm.getWorldPosition(new THREE.Vector3()).distanceTo(modelBones.Right_arm.getWorldPosition(new THREE.Vector3()));
+    this.height = eyePosition.sub(
+      _averagePoint([
+        modelBones.Left_ankle.getWorldPosition(new THREE.Vector3()),
+        modelBones.Right_ankle.getWorldPosition(new THREE.Vector3()),
+      ])
+    ).y;
+    this.shoulderWidth = modelBones.Left_arm.getWorldPosition(new THREE.Vector3()).distanceTo(
+      modelBones.Right_arm.getWorldPosition(new THREE.Vector3())
+    );
     this.leftArmLength = this.shoulderTransforms.leftArm.armLength;
     this.rightArmLength = this.shoulderTransforms.rightArm.armLength;
 
-		this.inputs = {
+    this.inputs = {
       hmd: this.poseManager.vrTransforms.head,
-			leftGamepad: this.poseManager.vrTransforms.leftHand,
-			rightGamepad: this.poseManager.vrTransforms.rightHand,
-		};
+      leftGamepad: this.poseManager.vrTransforms.leftHand,
+      rightGamepad: this.poseManager.vrTransforms.rightHand,
+    };
     this.inputs.hmd.scaleFactor = 1;
     this.lastModelScaleFactor = 1;
-		this.outputs = {
-			eyes: this.shoulderTransforms.eyes,
+    this.outputs = {
+      eyes: this.shoulderTransforms.eyes,
       head: this.shoulderTransforms.head,
       hips: this.legsManager.hips,
       spine: this.shoulderTransforms.spine,
@@ -849,30 +932,30 @@ class Avatar {
       rightUpperLeg: this.legsManager.rightLeg.upperLeg,
       rightLowerLeg: this.legsManager.rightLeg.lowerLeg,
       rightFoot: this.legsManager.rightLeg.foot,
-		};
-		this.modelBoneOutputs = {
-	    Hips: this.outputs.hips,
-	    Spine: this.outputs.spine,
-	    Chest: this.outputs.chest,
-	    Neck: this.outputs.neck,
-	    Head: this.outputs.head,
+    };
+    this.modelBoneOutputs = {
+      Hips: this.outputs.hips,
+      Spine: this.outputs.spine,
+      Chest: this.outputs.chest,
+      Neck: this.outputs.neck,
+      Head: this.outputs.head,
 
-	    Left_shoulder: this.outputs.rightShoulder,
-	    Left_arm: this.outputs.rightUpperArm,
-	    Left_elbow: this.outputs.rightLowerArm,
-	    Left_wrist: this.outputs.rightHand,
-	    Left_leg: this.outputs.rightUpperLeg,
-	    Left_knee: this.outputs.rightLowerLeg,
-	    Left_ankle: this.outputs.rightFoot,
+      Left_shoulder: this.outputs.rightShoulder,
+      Left_arm: this.outputs.rightUpperArm,
+      Left_elbow: this.outputs.rightLowerArm,
+      Left_wrist: this.outputs.rightHand,
+      Left_leg: this.outputs.rightUpperLeg,
+      Left_knee: this.outputs.rightLowerLeg,
+      Left_ankle: this.outputs.rightFoot,
 
-	    Right_shoulder: this.outputs.leftShoulder,
-	    Right_arm: this.outputs.leftUpperArm,
-	    Right_elbow: this.outputs.leftLowerArm,
-	    Right_wrist: this.outputs.leftHand,
-	    Right_leg: this.outputs.leftUpperLeg,
-	    Right_knee: this.outputs.leftLowerLeg,
-	    Right_ankle: this.outputs.leftFoot,
-	  };
+      Right_shoulder: this.outputs.leftShoulder,
+      Right_arm: this.outputs.leftUpperArm,
+      Right_elbow: this.outputs.leftLowerArm,
+      Right_wrist: this.outputs.leftHand,
+      Right_leg: this.outputs.leftUpperLeg,
+      Right_knee: this.outputs.leftLowerLeg,
+      Right_ankle: this.outputs.leftFoot,
+    };
 
     this.microphoneWorker = null;
     this.volume = 0;
@@ -895,7 +978,7 @@ class Avatar {
         this.decapitate();
       }
     }
-	}
+  }
   initializeBonePositions(setups) {
     this.shoulderTransforms.spine.position.copy(setups.spine);
     this.shoulderTransforms.transform.position.copy(setups.chest);
@@ -923,40 +1006,41 @@ class Avatar {
 
     this.shoulderTransforms.hips.updateMatrixWorld();
   }
-	update() {
-// return;
+  update() {
+    // return;
 
-   const wasDecapitated = this.decapitated;
-   if (this.springBoneManager && wasDecapitated) {
-    this.undecapitate();
-   }
+    const wasDecapitated = this.decapitated;
+    if (this.springBoneManager && wasDecapitated) {
+      this.undecapitate();
+    }
 
     const modelScaleFactor = this.inputs.hmd.scaleFactor;
     if (modelScaleFactor !== this.lastModelScaleFactor) {
       this.model.scale.set(modelScaleFactor, modelScaleFactor, modelScaleFactor);
       this.lastModelScaleFactor = modelScaleFactor;
 
-      this.springBoneManager && this.springBoneManager.springBoneGroupList.forEach(springBoneGroup => {
-        springBoneGroup.forEach(springBone => {
-          springBone._worldBoneLength = springBone.bone
-            .localToWorld(localVector.copy(springBone._initialLocalChildPosition))
-            .sub(springBone._worldPosition)
-            .length();
+      this.springBoneManager &&
+        this.springBoneManager.springBoneGroupList.forEach((springBoneGroup) => {
+          springBoneGroup.forEach((springBone) => {
+            springBone._worldBoneLength = springBone.bone
+              .localToWorld(localVector.copy(springBone._initialLocalChildPosition))
+              .sub(springBone._worldPosition)
+              .length();
+          });
         });
-      });
     }
 
     this.shoulderTransforms.Update();
     this.legsManager.Update();
 
-	  for (const k in this.modelBones) {
+    for (const k in this.modelBones) {
       const modelBone = this.modelBones[k];
       const modelBoneOutput = this.modelBoneOutputs[k];
 
       if (k === 'Hips') {
         modelBone.position.copy(modelBoneOutput.position);
       }
-      modelBone.quaternion.multiplyQuaternions(modelBoneOutput.quaternion, modelBone.initialQuaternion)
+      modelBone.quaternion.multiplyQuaternions(modelBoneOutput.quaternion, modelBone.initialQuaternion);
 
       if (k === 'Left_ankle' || k === 'Right_ankle') {
         modelBone.quaternion.multiply(upRotation);
@@ -973,7 +1057,7 @@ class Avatar {
     this.lastTimestamp = now;
 
     if (this.options.fingers) {
-      const _processFingerBones = left => {
+      const _processFingerBones = (left) => {
         const fingerBones = left ? this.fingerBones.left : this.fingerBones.right;
         const gamepadInput = left ? this.inputs.rightGamepad : this.inputs.leftGamepad;
         for (const k in fingerBones) {
@@ -981,14 +1065,20 @@ class Avatar {
           if (fingerBone) {
             let setter;
             if (k === 'thumb') {
-              setter = (q, i) => q.setFromAxisAngle(localVector.set(0, left ? 1 : -1, 0), gamepadInput.grip * Math.PI*(i === 0 ? 0.125 : 0.25));
+              setter = (q, i) =>
+                q.setFromAxisAngle(
+                  localVector.set(0, left ? 1 : -1, 0),
+                  gamepadInput.grip * Math.PI * (i === 0 ? 0.125 : 0.25)
+                );
             } else if (k === 'index') {
-              setter = (q, i) => q.setFromAxisAngle(localVector.set(0, 0, left ? -1 : 1), gamepadInput.pointer * Math.PI*0.5);
+              setter = (q, i) =>
+                q.setFromAxisAngle(localVector.set(0, 0, left ? -1 : 1), gamepadInput.pointer * Math.PI * 0.5);
             } else {
-              setter = (q, i) => q.setFromAxisAngle(localVector.set(0, 0, left ? -1 : 1), gamepadInput.grip * Math.PI*0.5);
+              setter = (q, i) =>
+                q.setFromAxisAngle(localVector.set(0, 0, left ? -1 : 1), gamepadInput.grip * Math.PI * 0.5);
             }
             let index = 0;
-            fingerBone.traverse(subFingerBone => {
+            fingerBone.traverse((subFingerBone) => {
               setter(subFingerBone.quaternion, index++);
             });
           }
@@ -1010,15 +1100,15 @@ class Avatar {
       const blinkValue = (() => {
         const nowWindow = now % 2000;
         if (nowWindow >= 0 && nowWindow < 100) {
-          return nowWindow/100;
+          return nowWindow / 100;
         } else if (nowWindow >= 100 && nowWindow < 200) {
-          return 1 - (nowWindow-100)/100;
+          return 1 - (nowWindow - 100) / 100;
         } else {
           return 0;
         }
       })();
-      this.skinnedMeshes.forEach(o => {
-        const {morphTargetDictionary, morphTargetInfluences} = o;
+      this.skinnedMeshes.forEach((o) => {
+        const { morphTargetDictionary, morphTargetInfluences } = o;
         if (morphTargetDictionary && morphTargetInfluences) {
           let aaMorphTargetIndex = morphTargetDictionary['vrc.v_aa'];
           if (aaMorphTargetIndex === undefined) {
@@ -1069,7 +1159,7 @@ class Avatar {
       }
       this.debugMeshes.geometry.attributes.position.needsUpdate = true;
     }
-	}
+  }
 
   async setMicrophoneMediaStream(microphoneMediaStream, options = {}) {
     if (this.microphoneWorker) {
@@ -1079,22 +1169,22 @@ class Avatar {
     }
     if (microphoneMediaStream) {
       this.microphoneWorker = new MicrophoneWorker(microphoneMediaStream, options);
-      this.microphoneWorker.addEventListener('volume', e => {
-        this.volume = this.volume*0.8 + e.data*0.2;
+      this.microphoneWorker.addEventListener('volume', (e) => {
+        this.volume = this.volume * 0.8 + e.data * 0.2;
       });
     }
   }
 
   decapitate() {
     if (!this.decapitated) {
-      this.modelBones.Head.traverse(o => {
+      this.modelBones.Head.traverse((o) => {
         o.savedPosition.copy(o.position);
         o.savedMatrixWorld.copy(o.matrixWorld);
         o.position.set(NaN, NaN, NaN);
         o.matrixWorld.set(NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN, NaN);
       });
       if (this.debugMeshes) {
-        [this.debugMeshes.attributes.eyes, this.debugMeshes.attributes.head].forEach(attribute => {
+        [this.debugMeshes.attributes.eyes, this.debugMeshes.attributes.head].forEach((attribute) => {
           attribute.visible = false;
         });
       }
@@ -1103,12 +1193,12 @@ class Avatar {
   }
   undecapitate() {
     if (this.decapitated) {
-      this.modelBones.Head.traverse(o => {
+      this.modelBones.Head.traverse((o) => {
         o.position.copy(o.savedPosition);
         o.matrixWorld.copy(o.savedMatrixWorld);
       });
       if (this.debugMeshes) {
-        [this.debugMeshes.attributes.eyes, this.debugMeshes.attributes.head].forEach(attribute => {
+        [this.debugMeshes.attributes.eyes, this.debugMeshes.attributes.head].forEach((attribute) => {
           attribute.visible = true;
         });
       }

@@ -20,14 +20,14 @@ export function readFile(file) {
   });
 }
 export function bindUploadFileButton(inputFileEl, handleUpload) {
-  inputFileEl.addEventListener('change', async e => {
-    const {files} = e.target;
+  inputFileEl.addEventListener('change', async (e) => {
+    const { files } = e.target;
     if (files.length === 1) {
       const [file] = files;
       handleUpload(file);
     }
 
-    const {parentNode} = inputFileEl;
+    const { parentNode } = inputFileEl;
     parentNode.removeChild(inputFileEl);
     const newInputFileEl = inputFileEl.ownerDocument.createElement('input');
     newInputFileEl.type = 'file';

@@ -1,20 +1,19 @@
 try {
   new EventTarget();
-} catch(err) {
+} catch (err) {
   (function (Object, wm) {
     var create = Object.create;
     var defineProperty = Object.defineProperty;
     var proto = EventTarget.prototype;
     define(proto, 'addEventListener', function (type, listener, options) {
-      for (var
-        secret = wm.get(this),
-        listeners = secret[type] || (secret[type] = []),
-        i = 0, length = listeners.length; i < length; i++
+      for (
+        var secret = wm.get(this), listeners = secret[type] || (secret[type] = []), i = 0, length = listeners.length;
+        i < length;
+        i++
       ) {
-        if (listeners[i].listener === listener)
-          return;
+        if (listeners[i].listener === listener) return;
       }
-      listeners.push({target: this, listener: listener, options: options});
+      listeners.push({ target: this, listener: listener, options: options });
     });
     define(proto, 'dispatchEvent', function (event) {
       var secret = wm.get(this);
@@ -29,11 +28,14 @@ try {
       return true;
     });
     define(proto, 'removeEventListener', function (type, listener) {
-      for (var
-        secret = wm.get(this),
-        /* istanbul ignore next */
-        listeners = secret[type] || (secret[type] = []),
-        i = 0, length = listeners.length; i < length; i++
+      for (
+        var secret = wm.get(this),
+          /* istanbul ignore next */
+          listeners = secret[type] || (secret[type] = []),
+          i = 0,
+          length = listeners.length;
+        i < length;
+        i++
       ) {
         if (listeners[i].listener === listener) {
           listeners.splice(i, 1);
@@ -42,29 +44,23 @@ try {
       }
     });
     window.EventTarget = EventTarget;
-    function EventTarget() {'use strict';
+    function EventTarget() {
+      'use strict';
       wm.set(this, create(null));
     }
     function define(target, name, value) {
-      defineProperty(
-        target,
-        name,
-        {
-          configurable: true,
-          writable: true,
-          value: value
-        }
-      );
+      defineProperty(target, name, {
+        configurable: true,
+        writable: true,
+        value: value,
+      });
     }
     function dispatch(info) {
       var options = info.options;
-      if (options && options.once)
-        info.target.removeEventListener(this.type, info.listener);
-      if (typeof info.listener === 'function')
-        info.listener.call(info.target, this);
-      else
-        info.listener.handleEvent(this);
+      if (options && options.once) info.target.removeEventListener(this.type, info.listener);
+      if (typeof info.listener === 'function') info.listener.call(info.target, this);
+      else info.listener.handleEvent(this);
     }
-  }(Object, new WeakMap));
+  })(Object, new WeakMap());
 }
 export default self.EventTarget;

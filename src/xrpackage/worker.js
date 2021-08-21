@@ -1,11 +1,11 @@
 import THREE from '../three.module.js';
 
-globalThis.addEventListener('message', e => {
+globalThis.addEventListener('message', (e) => {
   const j = e.data;
-  const {method} = j;
+  const { method } = j;
   switch (method) {
     case 'init': {
-      const {scriptUrl} = j;
+      const { scriptUrl } = j;
       import(scriptUrl);
       URL.revokeObjectURL(scriptUrl);
       break;
@@ -27,5 +27,5 @@ globalThis.addEventListener('message', e => {
 
 const object = new THREE.Object3D();
 globalThis.object = object;
-globalThis.requestAnimationFrame = fn => setTimeout(fn);
-globalThis.cancelAnimationFrame = r => clearTimeout(r);
+globalThis.requestAnimationFrame = (fn) => setTimeout(fn);
+globalThis.cancelAnimationFrame = (r) => clearTimeout(r);

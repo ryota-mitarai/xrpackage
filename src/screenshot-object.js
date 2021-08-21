@@ -1,5 +1,5 @@
 import THREE from './xrpackage/three.module.js';
-import {GLTFExporter} from './GLTFExporter.js';
+import { GLTFExporter } from './GLTFExporter.js';
 import './gif.js';
 import screenshot from './screenshot.js';
 
@@ -20,7 +20,7 @@ export async function screenshotObject(o) {
   {
     const ambientLight = new THREE.AmbientLight(0x808080);
     newScene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(0.5, 1, 0.5).multiplyScalar(100);
     newScene.add(directionalLight);
   }
@@ -36,15 +36,20 @@ export async function screenshotObject(o) {
     workers: 2,
     quality: 10,
   });
-  for (let i = 0; i < Math.PI*2; i += Math.PI*0.05) {
-    const position = center.clone()
+  for (let i = 0; i < Math.PI * 2; i += Math.PI * 0.05) {
+    const position = center
+      .clone()
       .add(new THREE.Vector3(0, size.y / 2, 0))
-      .add(new THREE.Vector3(Math.cos(i + Math.PI/2), 0, Math.sin(i + Math.PI/2)).multiplyScalar(Math.max(size.x, size.z) * 1.2));
+      .add(
+        new THREE.Vector3(Math.cos(i + Math.PI / 2), 0, Math.sin(i + Math.PI / 2)).multiplyScalar(
+          Math.max(size.x, size.z) * 1.2
+        )
+      );
     const canvas = screenshot(newScene, position, center, {
       width,
       height,
     });
-    gif.addFrame(canvas, {delay: 50});
+    gif.addFrame(canvas, { delay: 50 });
   }
   gif.render();
 
@@ -59,12 +64,16 @@ export async function exportObject(o) {
   const exporter = new GLTFExporter();
   const exportScene = new THREE.Scene();
   exportScene.add(o);
-  exporter.parse(exportScene, gltf => {
-    dataPromise.accept(gltf);
-  }, {
-    binary: true,
-    includeCustomExtensions: true,
-  });
+  exporter.parse(
+    exportScene,
+    (gltf) => {
+      dataPromise.accept(gltf);
+    },
+    {
+      binary: true,
+      includeCustomExtensions: true,
+    }
+  );
   const data = await dataPromise;
   console.log('got gltf data', data);
   return data;
@@ -78,11 +87,9 @@ export async function screenshotEngine(pe) {
     workers: 2,
     quality: 10,
   });
-  for (let i = 0; i < Math.PI*2; i += Math.PI*0.025) {
+  for (let i = 0; i < Math.PI * 2; i += Math.PI * 0.025) {
     pe.camera.position.copy(center).add(new THREE.Vector3(Math.cos(i) * size.x, size.y / 2, Math.sin(i) * size.z));
-    pe.camera.quaternion.setFromRotationMatrix(
-      new THREE.Matrix4().lookAt(pe.camera.position, center, up)
-    );
+    pe.camera.quaternion.setFromRotationMatrix(new THREE.Matrix4().lookAt(pe.camera.position, center, up));
     pe.camera.scale.set(1, 1, 1);
     pe.camera.matrix.compose(pe.camera.position, pe.camera.quaternion, pe.camera.scale);
     pe.setCamera(pe.camera);
@@ -95,7 +102,7 @@ export async function screenshotEngine(pe) {
     ctx.drawImage(pe.domElement, 0, 0);
     // document.body.appendChild(canvas);
 
-    gif.addFrame(canvas, {delay: 30});
+    gif.addFrame(canvas, { delay: 30 });
   }
   gif.render();
 

@@ -1,7 +1,7 @@
 import * as THREE from './three.module.js';
 import symbols from './symbols.js';
 import utils from './utils.js';
-const {_elementGetter, _elementSetter} = utils;
+const { _elementGetter, _elementSetter } = utils;
 
 const localVector = new THREE.Vector3();
 const localVector2 = new THREE.Vector3();
@@ -80,7 +80,11 @@ class Gamepad {
       const result = Array(xrGamepad.buttons.length);
       for (let i = 0; i < result.length; i++) {
         const vrButtonIndex = i; // xrToVrButtonMappings[i];
-        result[vrButtonIndex] = new GamepadButton(xrGamepad.buttons[i].value, xrGamepad.buttons[i].pressed, xrGamepad.buttons[i].touched);
+        result[vrButtonIndex] = new GamepadButton(
+          xrGamepad.buttons[i].value,
+          xrGamepad.buttons[i].pressed,
+          xrGamepad.buttons[i].touched
+        );
       }
       return result;
     })();
@@ -126,14 +130,18 @@ class XR extends EventTarget {
 
       await session.onrequestpresent();
       session.isPresenting = true; */
-      
-      const {session} = this.onrequestpresent();
-      session.addEventListener('end', () => {
-        // session.isPresenting = false;
-        this.session = null;
-      }, {
-        once: true,
-      });
+
+      const { session } = this.onrequestpresent();
+      session.addEventListener(
+        'end',
+        () => {
+          // session.isPresenting = false;
+          this.session = null;
+        },
+        {
+          once: true,
+        }
+      );
       this.session = session;
     }
     return this.session;
@@ -147,7 +155,7 @@ class XR extends EventTarget {
   set onvrdevicechange(onvrdevicechange) {
     _elementSetter(this, 'vrdevicechange', onvrdevicechange);
   }
-};
+}
 
 /* class XRDevice { // non-standard
   constructor(xr) {
@@ -218,7 +226,7 @@ class XRSession extends EventTarget {
   requestAnimationFrame(fn) {
     // console.log('request animation frame', window.location.href);
     if (this.onrequestanimationframe) {
-      const animationFrame = this.onrequestanimationframe(timestamp => {
+      const animationFrame = this.onrequestanimationframe((timestamp) => {
         this._rafs.splice(animationFrame, 1);
         fn(timestamp, this._frame);
       }, globalThis);
@@ -250,11 +258,12 @@ class XRSession extends EventTarget {
   updateRenderState(newState) {
     this.renderState.update(newState);
   }
-  get baseLayer() { // non-standard
+  get baseLayer() {
+    // non-standard
     return this.renderState.baseLayer;
   }
   set baseLayer(baseLayer) {
-    this.renderState.update({baseLayer});
+    this.renderState.update({ baseLayer });
   }
   async end() {
     await this.onexitpresent();
@@ -350,20 +359,14 @@ class XRRenderState {
       this[k] = newState[k];
     }
   }
-};
+}
 
 class XRWebGLLayer {
   constructor(session, context, options = {}) {
     this.session = session;
     this.context = context;
-    
-    const {
-      antialias = true,
-      depth = false,
-      stencil = false,
-      alpha = true,
-      framebufferScaleFactor = 1,
-    } = options;
+
+    const { antialias = true, depth = false, stencil = false, alpha = true, framebufferScaleFactor = 1 } = options;
     this.antialias = antialias;
     this.depth = depth;
     this.stencil = stencil;
@@ -382,17 +385,17 @@ class XRWebGLLayer {
   requestViewportScaling(viewportScaleFactor) {
     throw new Error('not implemented'); // XXX
   }
-  
+
   get framebuffer() {
     return this.session.xrFramebuffer;
   }
   set framebuffer(framebuffer) {}
 
   get framebufferWidth() {
-    return this.session.xrState.renderWidth[0]*2;
+    return this.session.xrState.renderWidth[0] * 2;
   }
   set framebufferWidth(framebufferWidth) {}
-  
+
   get framebufferHeight() {
     return this.session.xrState.renderHeight[0];
   }
@@ -463,7 +466,8 @@ class XRView {
 
     this.eye = eye;
     this.transform = new XRRigidTransform(eye, session);
-    this.projectionMatrix = eye === 'left' ? session.xrState.leftProjectionMatrix : session.xrState.rightProjectionMatrix;
+    this.projectionMatrix =
+      eye === 'left' ? session.xrState.leftProjectionMatrix : session.xrState.rightProjectionMatrix;
 
     this._viewport = new XRViewport(eye, session);
     this._realViewMatrix = this.transform.inverse.matrix;
@@ -530,10 +534,7 @@ class XRViewerPose extends XRPose {
 
     this.frame = frame; // non-standard
 
-    this._views = [
-      new XRView('left', session),
-      new XRView('right', session),
-    ];
+    this._views = [new XRView('left', session), new XRView('right', session)];
 
     // this.poseModelMatrix = Float32Array.from([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); // non-standard
   }
@@ -639,7 +640,7 @@ class XRInputSource {
     this._inputPose.targetRay.direction.values = this.xrStateGamepad.direction;
     this._inputPose._realViewMatrix = this.xrStateGamepad.transformMatrix;
     this._inputPose._localViewMatrix = Float32Array.from([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); */
-    
+
     this.gamepad = null;
     this.hand = null;
     this.profiles = ['webxr'];
@@ -647,7 +648,13 @@ class XRInputSource {
     this._type = type;
     switch (this._type) {
       case 'gamepad': {
-        this.gamepad = new Gamepad(handedness === 'right' ? 1 : 0, 'WebXR Gamepad', handedness, this.xrStateGamepad, false);
+        this.gamepad = new Gamepad(
+          handedness === 'right' ? 1 : 0,
+          'WebXR Gamepad',
+          handedness,
+          this.xrStateGamepad,
+          false
+        );
         break;
       }
       case 'hand': {
@@ -658,9 +665,12 @@ class XRInputSource {
   }
   get connected() {
     switch (this._type) {
-      case 'gamepad': return this.xrStateGamepad.connected[0] !== 0;
-      case 'hand': return this.xrStateHand.visible[0] !== 0;
-      default: return false;
+      case 'gamepad':
+        return this.xrStateGamepad.connected[0] !== 0;
+      case 'hand':
+        return this.xrStateHand.visible[0] !== 0;
+      default:
+        return false;
     }
   }
 }
@@ -685,14 +695,30 @@ class DOMPoint {
       this._buffer = Float32Array.from([x, y, z, w]);
     }
   }
-  get x() { return this._buffer[0]; }
-  set x(x) { this._buffer[0] = x; }
-  get y() { return this._buffer[1]; }
-  set y(y) { this._buffer[1] = y; }
-  get z() { return this._buffer[2]; }
-  set z(z) { this._buffer[2] = z; }
-  get w() { return this._buffer[3]; }
-  set w(w) { this._buffer[3] = w; }
+  get x() {
+    return this._buffer[0];
+  }
+  set x(x) {
+    this._buffer[0] = x;
+  }
+  get y() {
+    return this._buffer[1];
+  }
+  set y(y) {
+    this._buffer[1] = y;
+  }
+  get z() {
+    return this._buffer[2];
+  }
+  set z(z) {
+    this._buffer[2] = z;
+  }
+  get w() {
+    return this._buffer[3];
+  }
+  set w(w) {
+    this._buffer[3] = w;
+  }
   fromPoint(p) {
     return new DOMPoint(p.x, p.y, p.z, p.w);
   }
@@ -741,13 +767,13 @@ class XRRigidTransform extends EventTarget {
       this.initialize();
 
       if (!position) {
-        position = {x: 0, y: 0, z: 0};
+        position = { x: 0, y: 0, z: 0 };
       }
       if (!orientation) {
-        orientation = {x: 0, y: 0, z: 0, w: 1};
+        orientation = { x: 0, y: 0, z: 0, w: 1 };
       }
       if (!scale) {
-        scale = {x: 1, y: 1, z: 1};
+        scale = { x: 1, y: 1, z: 1 };
       }
 
       this._position._buffer[0] = position.x;
@@ -764,13 +790,14 @@ class XRRigidTransform extends EventTarget {
       this._scale._buffer[2] = scale.z;
 
       localMatrix
-        .compose(localVector.fromArray(this._position._buffer), localQuaternion.fromArray(this._orientation._buffer), localVector2.fromArray(this._scale._buffer))
+        .compose(
+          localVector.fromArray(this._position._buffer),
+          localQuaternion.fromArray(this._orientation._buffer),
+          localVector2.fromArray(this._scale._buffer)
+        )
         .toArray(this.matrix);
-      localMatrix
-        .getInverse(localMatrix)
-        .toArray(this.matrixInverse);
-      localMatrix
-        .decompose(localVector, localQuaternion, localVector2);
+      localMatrix.getInverse(localMatrix).toArray(this.matrixInverse);
+      localMatrix.decompose(localVector, localQuaternion, localVector2);
       localVector.toArray(this._positionInverse._buffer);
       localQuaternion.toArray(this._orientationInverse._buffer);
       localVector2.toArray(this._scaleInverse._buffer);
@@ -780,13 +807,13 @@ class XRRigidTransform extends EventTarget {
       this._inverse = new XRRigidTransform(this._buffer, this);
     }
   }
-  
+
   initialize(_buffer = new ArrayBuffer((3 + 4 + 3 + 16) * 2 * Float32Array.BYTES_PER_ELEMENT), inverse = null) {
     this._buffer = _buffer;
     this._inverse = inverse;
 
     {
-      let index = this._inverse ? ((3 + 4 + 3 + 16) * Float32Array.BYTES_PER_ELEMENT) : 0;
+      let index = this._inverse ? (3 + 4 + 3 + 16) * Float32Array.BYTES_PER_ELEMENT : 0;
 
       this._position = new DOMPoint(new Float32Array(this._buffer, index, 3));
       index += 3 * Float32Array.BYTES_PER_ELEMENT;
@@ -801,7 +828,7 @@ class XRRigidTransform extends EventTarget {
       index += 16 * Float32Array.BYTES_PER_ELEMENT;
     }
     {
-      let index = this._inverse ? 0 : ((3 + 4 + 3 + 16) * Float32Array.BYTES_PER_ELEMENT);
+      let index = this._inverse ? 0 : (3 + 4 + 3 + 16) * Float32Array.BYTES_PER_ELEMENT;
 
       this._positionInverse = new DOMPoint(new Float32Array(this._buffer, index, 3));
       index += 3 * Float32Array.BYTES_PER_ELEMENT;
@@ -816,7 +843,7 @@ class XRRigidTransform extends EventTarget {
       index += 16 * Float32Array.BYTES_PER_ELEMENT;
     }
   }
-  
+
   get inverse() {
     return this._inverse;
   }
@@ -826,34 +853,40 @@ class XRRigidTransform extends EventTarget {
     return this._position;
   }
   set position(position) {
-    this.dispatchEvent(new CustomEvent('change', {
-      detail: {
-        key: 'position',
-        value: position,
-      },
-    }));
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        detail: {
+          key: 'position',
+          value: position,
+        },
+      })
+    );
   }
   get orientation() {
     return this._orientation;
   }
   set orientation(orientation) {
-    this.dispatchEvent(new CustomEvent('change', {
-      detail: {
-        key: 'orientation',
-        value: orientation,
-      },
-    }));
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        detail: {
+          key: 'orientation',
+          value: orientation,
+        },
+      })
+    );
   }
   get scale() {
     return this._scale;
   }
   set scale(scale) {
-    this.dispatchEvent(new CustomEvent('change', {
-      detail: {
-        key: 'scale',
-        value: scale,
-      },
-    }));
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        detail: {
+          key: 'scale',
+          value: scale,
+        },
+      })
+    );
   }
 
   pushUpdate() {
@@ -864,11 +897,8 @@ class XRRigidTransform extends EventTarget {
         localVector2.fromArray(this._scale._buffer)
       )
       .toArray(this.matrix);
-    localMatrix
-      .getInverse(localMatrix)
-      .toArray(this.matrixInverse);
-    localMatrix
-      .decompose(localVector, localQuaternion, localVector2);
+    localMatrix.getInverse(localMatrix).toArray(this.matrixInverse);
+    localMatrix.decompose(localVector, localQuaternion, localVector2);
     localVector.toArray(this._positionInverse._buffer);
     localQuaternion.toArray(this._orientationInverse._buffer);
     localVector2.toArray(this._scaleInverse._buffer);
@@ -880,7 +910,7 @@ class XRSpace extends EventTarget {
     super();
 
     this.session = session; // non-standard
-    
+
     this._pose = new XRPose(session);
   }
 }
@@ -904,12 +934,7 @@ class XRBoundedReferenceSpace extends XRReferenceSpace {
   constructor(session) {
     super(session);
 
-    this.boundsGeometry = [
-      new DOMPoint(-3, -3),
-      new DOMPoint(3, -3),
-      new DOMPoint(3, 3),
-      new DOMPoint(-3, 3),
-    ];
+    this.boundsGeometry = [new DOMPoint(-3, -3), new DOMPoint(3, -3), new DOMPoint(3, 3), new DOMPoint(-3, 3)];
     this.emulatedHeight = 0;
   }
 }

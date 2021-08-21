@@ -1,4 +1,4 @@
-const module = {exports: {}};
+const module = { exports: {} };
 module.exports.windowSymbol = Symbol('windowSymbol');
 module.exports.packageSymbol = Symbol('packageSymbol');
 module.exports.addRunSymbol = Symbol('addRunSymbol');

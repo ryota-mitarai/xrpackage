@@ -10,24 +10,27 @@ class MicrophoneWorker extends EventTarget {
     this.audioContext = new AudioContext();
     const mediaStreamSource = this.audioContext.createMediaStreamSource(mediaStream);
 
-    this.audioContext.audioWorklet.addModule(options.microphoneWorkletUrl || 'microphone-worklet.js')
-      .then(() => {
-        const audioWorkletNode = new AudioWorkletNode(this.audioContext, 'volume-processor');
-        if (options.muted === false) {
-          audioWorkletNode.port.postMessage(JSON.stringify({
+    this.audioContext.audioWorklet.addModule(options.microphoneWorkletUrl || 'microphone-worklet.js').then(() => {
+      const audioWorkletNode = new AudioWorkletNode(this.audioContext, 'volume-processor');
+      if (options.muted === false) {
+        audioWorkletNode.port.postMessage(
+          JSON.stringify({
             method: 'muted',
             muted: false,
-          }));
-        }
-        audioWorkletNode.port.onmessage = e => {
-          if (this.live) {
-            this.dispatchEvent(new MessageEvent('volume', {
+          })
+        );
+      }
+      audioWorkletNode.port.onmessage = (e) => {
+        if (this.live) {
+          this.dispatchEvent(
+            new MessageEvent('volume', {
               data: e.data,
-            }));
-          }
-        };
-        mediaStreamSource.connect(audioWorkletNode).connect(this.audioContext.destination);
-      });
+            })
+          );
+        }
+      };
+      mediaStreamSource.connect(audioWorkletNode).connect(this.audioContext.destination);
+    });
   }
   close() {
     this.live = false;

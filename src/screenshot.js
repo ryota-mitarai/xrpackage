@@ -30,7 +30,7 @@ const screenshot = (scene, cameraPosition, cameraTarget, options = {}) => {
       // alpha: true,
       antialias: true,
     });
-    renderer.setClearColor(0xFFFFFF, 1);
+    renderer.setClearColor(0xffffff, 1);
   }
   renderer.setSize(width, height);
   // renderer.clear(true, true, true);

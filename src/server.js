@@ -8,7 +8,6 @@ app.use((req, res, next) => {
 });
 app.use(express.static(__dirname));
 
-http.createServer(app)
-  .listen(3000);
+http.createServer(app).listen(3000);
 
 console.log('http://127.0.0.1:3000');
