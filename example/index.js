@@ -1,4 +1,4 @@
-import { XRPackageEngine, XRPackage } from '../xrpackage.js';
+import { XRPackageEngine, XRPackage } from '../src/xrpackage.js';
 const pe = new XRPackageEngine();
 document.body.appendChild(pe.domElement);
 
