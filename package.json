@@ -9,17 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/webaverse/xrpackage.git"
+    "url": "git+https://github.com/ryota-mitarai/xrpackage.git"
   },
   "author": "",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/webaverse/xrpackage/issues"
-  },
-  "homepage": "https://github.com/webaverse/xrpackage#readme",
-  "browserslist": [
-    "last 1 chrome version"
-  ],
+  "homepage": "https://github.com/ryota-mitarai/xrpackage#readme",
   "devDependencies": {
     "ava": "^3.10.1",
     "eslint": "^7.2.0",

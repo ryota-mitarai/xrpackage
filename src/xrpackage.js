@@ -124,7 +124,7 @@ const _getSlotInput = (rig, slot) => {
 const _removeUrlTail = (u) => u.replace(/(?:\?|\#).*$/, '');
 
 const _initSw = async () => {
-  await navigator.serviceWorker.register('/sw.js', {
+  await navigator.serviceWorker.register(new URL('./sw.js', import.meta.url), {
     // type: 'module',
   });
   if (!navigator.serviceWorker.controller) {
@@ -139,7 +139,6 @@ const _initSw = async () => {
       navigator.serviceWorker.addEventListener('controllerchange', _controllerchange);
       const timeout = setTimeout(() => {
         console.warn('sw registration timed out');
-        debugger;
       }, 10 * 1000);
     });
   }
